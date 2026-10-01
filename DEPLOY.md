@@ -1,4 +1,4 @@
-# Deploy da Apex Security v2.2.0
+# Deploy da Apex Security v2.2.1
 
 Este guia documenta o dashboard/backend no repositório [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security). O site de apresentação fica em outro repositório. URLs atuais: [API](https://apex-security-xzk4.onrender.com/docs), [dashboard](https://apex-security-kappa.vercel.app) e [site](https://apex-security-site-apresentacao.vercel.app). Render, Neon e Vercel usam planos gratuitos; confirme os limites atuais nos respectivos painéis.
 
@@ -65,7 +65,9 @@ Em **Settings → Secrets and variables → Actions** do repositório que será 
 | `APEX_API_URL` | `https://apex-security-xzk4.onrender.com`, sem `/api` e sem barra final |
 | `APEX_USER_API_KEY` | Chave exibida em **Chave de Integração** de uma conta do dashboard |
 
-Copie o workflow da raiz [`.github/workflows/apex-scan.yml`](.github/workflows/apex-scan.yml) para o repositório cliente. A cópia em `pipeline/` é referência e deve permanecer idêntica. O workflow acrescenta `/api/scan` à URL base, usa `github.repository` para identificar o repositório e falha visivelmente quando o envio HTTP não é 2xx. `APEX_API_URL` não é variável do backend.
+Copie o workflow da raiz [`.github/workflows/apex-scan.yml`](.github/workflows/apex-scan.yml) para o repositório cliente. A cópia em `pipeline/` é referência e deve permanecer idêntica. O workflow acrescenta `/api/scan` à URL base, usa `github.repository` para identificar o repositório e falha visivelmente quando o envio HTTP não é 2xx. `APEX_API_URL` não é variável do backend. `APEX_USER_API_KEY` também fica somente nos secrets do GitHub; a API consulta a chave salva na conta do usuário no banco.
+
+O workflow valida os secrets antes de instalar scanners. Ausência de secrets falha claramente; pull requests de forks rodam scanners sem enviar dados autenticados. Falhas operacionais dos scanners não são ignoradas. Cada envio tem até 120 segundos, sem retry automático. Depois do deploy do backend, abra **Actions → Apex Security Scan → Run workflow** para validar a versão publicada; um push pode disparar o pipeline antes do Render terminar o deploy.
 
 ## Renovar o token de GitHub usado pelo backend
 
@@ -82,3 +84,9 @@ O `GITHUB_TOKEN` é um PAT classic da conta atual. Ao gerar ou renovar, escolha 
 7. Antes de demonstrações, acorde o backend e abra o dashboard com antecedência.
 
 Para testes locais sem iniciar o servidor, execute `pytest tests/ -v` a partir da raiz com o ambiente Python 3.11 do backend ativado. No `frontend/`, execute `npm run build`. Os testes devem usar mocks e não chamar Gemini, GitHub ou Resend.
+
+## Diagnóstico de conexão e integrações
+
+Veja [o relatório de 2026-10-01](docs/DIAGNOSTICO_2026-10-01.md). O pool usa pre-ping e reciclagem de 300 segundos. Isso não recupera uma transação já interrompida: `/api/scan` retorna 503 e não confirma sucesso. Falhas de constraints ou SQL retornam 500. Após falha durante o commit, confira o que foi persistido antes de reenviar, pois a resposta perdida pode ter ocorrido depois do commit.
+
+O Radar ainda exige ajustar `GEMINI_MODEL` no painel do Render para um modelo disponível na conta atual (o print indica `gemini-3.5-flash-lite`). O padrão versionado de `gemini-2.5-flash-lite` permanece conforme a regra atual do AGENTS.md; uma variável do Render sobrepõe esse padrão para todos os serviços de IA. Salve, espere o reinício e teste Radar, Remediar, Intenção, Risco Real e SLA.

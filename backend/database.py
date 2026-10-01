@@ -1,14 +1,14 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
 import os
+from services.db_engine import build_engine
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:SUA_SENHA@localhost:5432/apex_db")
 
-engine = create_engine(DATABASE_URL)
+engine = build_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -17,6 +17,9 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -61,6 +64,7 @@ def run_additive_migrations():
         print(f"[OK] Migracoes aditivas aplicadas ({len(applied)} colunas verificadas)")
     except Exception as e:
         print(f"[ERRO] Falha ao aplicar migracoes aditivas: {e}")
+        raise
 
 
 def test_connection():

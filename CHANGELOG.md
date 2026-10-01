@@ -1,5 +1,23 @@
 # Changelog — Apex Security
 
+## v2.2.1 — 2026-10-01
+
+### Corrigido
+
+- Pool SQLAlchemy com pre-ping, reciclagem de 300 segundos e parâmetros SQL ocultos em erros.
+- Ingestão de scan atômica: inventário e alertas em uma transação, com rollback e sem replay automático de commit ambíguo.
+- Desconexão e esgotamento do pool retornam 503; erros reais de persistência continuam falhando com 500 e log sanitizado.
+- Chave de integração enviada mas inválida retorna 401; ausência de chave preserva o modo legado.
+- Normalizador valida formatos, tipos e limites antes de gravar; metadados opcionais nulos e listas de CVEs tratados.
+- Falhas de migração ou conexão no startup impedem inicialização aparentemente saudável.
+- Workflow valida secrets, não ignora erro operacional de scanners, envia arquivo de payload e aguarda até 120 segundos; nomes de branch passam por variáveis de ambiente.
+
+### Adicionado
+
+- Testes isolados do endpoint, desconexão DBAPI real em SQLite, rollback, recuperação, commit ambíguo e detecção do erro SSL pelo dialeto psycopg2.
+- Execução manual do workflow e tentativa independente de envio de Trivy após falha no envio de Semgrep.
+- Relatório de diagnóstico e auditoria com pendências de Gemini, dependências e validação em produção.
+
 ## v2.2.0 — 2026-10-01
 
 ### Alterado

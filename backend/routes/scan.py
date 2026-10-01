@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, TimeoutError as PoolTimeoutError
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+import logging
 from database import get_db
 from models import Alert, Repository, User
 from services.normalizer import normalize
@@ -8,16 +11,17 @@ from services.prioritizer import prioritize
 from services.anomaly_detector import train_and_score
 from services.auth import get_current_user, get_user_by_api_key
 from services.discord_notifier import send_discord_alert
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class ScanPayload(BaseModel):
-    tool: str
-    repository: str
+    tool: str = Field(min_length=1, max_length=50)
+    repository: str = Field(min_length=1, max_length=255)
     raw_json: str
     branch: Optional[str] = "main"
     commit_sha: Optional[str] = None
@@ -49,61 +53,82 @@ def receive_scan(
     fazer login. A conta e identificada pela api_key no header X-Apex-Api-Key.
     Sem a chave, os dados entram como legado/demo (user_id=None).
     """
-    user = get_user_by_api_key(x_apex_api_key, db) if x_apex_api_key else None
-    user_id = user.id if user else None
-
-    # Registrar repositorio se ainda nao existir (inventario global; o nome e unico)
-    repo = db.query(Repository).filter(Repository.name == payload.repository).first()
-    if not repo:
-        repo = Repository(name=payload.repository, user_id=user_id)
-        db.add(repo)
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-
-    # Normalizar para formato ASU
+    # Validate before touching the database: malformed scans never create inventory.
     try:
         normalized_alerts = normalize(payload.tool, payload.raw_json, payload.repository)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        prioritized_alerts = [prioritize(alert) for alert in normalized_alerts]
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # Aplicar priorização por contexto IaC
-    prioritized_alerts = [prioritize(alert) for alert in normalized_alerts]
-
-    # Salvar cada alerta no banco, associado a conta dona da api_key
+    notifications = []
     saved_ids = []
-    for alert_data in prioritized_alerts:
-        alert = Alert(
-            user_id=user_id,
-            source_tool=alert_data["source_tool"],
-            repository=alert_data["repository"],
-            file_path=alert_data.get("file_path"),
-            line_number=alert_data.get("line_number"),
-            severity=alert_data["severity"],
-            severity_adjusted=alert_data.get("severity_adjusted"),
-            title=alert_data["title"],
-            description=alert_data.get("description"),
-            cve_id=alert_data.get("cve_id"),
-            iac_internet_exposed=alert_data.get("iac_internet_exposed"),
-            raw_output=alert_data.get("raw_output")
-        )
-        db.add(alert)
-        db.commit()
-        db.refresh(alert)
-        saved_ids.append(alert.id)
+    stage = "transaction"
+    try:
+        # One commit for inventory + every alert. A disconnect aborts the whole scan.
+        with db.begin():
+            user = get_user_by_api_key(x_apex_api_key, db) if x_apex_api_key else None
+            if x_apex_api_key and user is None:
+                raise HTTPException(status_code=401, detail="Chave de integracao invalida")
+            user_id = user.id if user else None
+            account = user.company_name if user else "legado/demo (sem api_key)"
+            webhook = user.discord_webhook_url if user else None
 
-        # Notificacao best-effort: falha no Discord nunca quebra o salvamento
-        if user and user.discord_webhook_url:
-            try:
-                send_discord_alert(
-                    user.discord_webhook_url,
-                    alert.title,
-                    alert.severity_adjusted or alert.severity,
-                    alert.repository
+            repo = db.query(Repository).filter(Repository.name == payload.repository).first()
+            if repo is None:
+                # Concurrent scans may discover the same repository. Only the name
+                # conflict is ignored; other constraints still raise a real error.
+                dialect = db.get_bind().dialect.name
+                insert = {"postgresql": pg_insert, "sqlite": sqlite_insert}.get(dialect)
+                if insert:
+                    db.execute(insert(Repository).values(
+                        name=payload.repository, user_id=user_id
+                    ).on_conflict_do_nothing(index_elements=[Repository.name]))
+                else:
+                    db.add(Repository(name=payload.repository, user_id=user_id))
+                    db.flush()
+
+            for alert_data in prioritized_alerts:
+                alert = Alert(
+                    user_id=user_id,
+                    **{key: alert_data.get(key) for key in (
+                        "source_tool", "repository", "file_path", "line_number",
+                        "severity", "severity_adjusted", "title", "description",
+                        "cve_id", "iac_internet_exposed", "raw_output",
+                    )}
                 )
-            except Exception:
-                pass
+                db.add(alert)
+                db.flush()
+                saved_ids.append(alert.id)
+                if webhook:
+                    notifications.append((
+                        webhook, alert.title,
+                        alert.severity_adjusted or alert.severity, alert.repository
+                    ))
+            stage = "commit"
+    except PoolTimeoutError as exc:
+        logger.error("Scan database pool exhausted (stage=%s)", stage)
+        raise HTTPException(status_code=503, detail="Banco indisponivel; scan nao confirmado") from exc
+    except DBAPIError as exc:
+        # Never log the full exception here: SQL parameters can contain scanner secrets.
+        code = getattr(exc.orig, "pgcode", None)
+        diag = getattr(exc.orig, "diag", None)
+        logger.error("Scan database failure (stage=%s, type=%s, code=%s, disconnected=%s, table=%s, column=%s, constraint=%s)",
+                     stage, type(exc.orig).__name__, code, exc.connection_invalidated,
+                     getattr(diag, "table_name", None), getattr(diag, "column_name", None),
+                     getattr(diag, "constraint_name", None))
+        if exc.connection_invalidated or (code and (code.startswith("08") or code in ("57P01", "57P02", "57P03"))):
+            # Pre-ping cannot repair a transaction already in progress. In particular,
+            # a lost commit acknowledgement is ambiguous: do not automatically replay.
+            raise HTTPException(status_code=503, detail="Conexao com banco interrompida; scan nao confirmado") from exc
+        raise HTTPException(status_code=500, detail="Falha ao persistir scan no banco") from exc
+
+    # Capture scalars before commit; avoid queries on expired ORM objects afterwards.
+    # Discord is best effort and runs only after the database commit has succeeded.
+    for notification in notifications:
+        try:
+            send_discord_alert(*notification)
+        except Exception as exc:
+            logger.warning("Discord notification failed (type=%s)", type(exc).__name__)
 
     return {
         "message": "Scan normalizado e salvo com sucesso",
@@ -111,7 +136,7 @@ def receive_scan(
         "repository": payload.repository,
         "alerts_saved": len(saved_ids),
         "alert_ids": saved_ids,
-        "account": user.company_name if user else "legado/demo (sem api_key)"
+        "account": account
     }
 
 

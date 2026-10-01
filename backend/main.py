@@ -17,7 +17,7 @@ run_additive_migrations()
 app = FastAPI(
     title="Apex Security API",
     description="Plataforma ASPM — Apex Security v2.2",
-    version="2.2.0"
+    version="2.2.1"
 )
 
 app.add_middleware(
@@ -39,14 +39,15 @@ app.include_router(risk_router, prefix="/api", tags=["risk"])
 
 @app.on_event("startup")
 async def startup_event():
-    test_connection()
+    if not test_connection():
+        raise RuntimeError("Banco indisponivel durante o startup")
 
 
 @app.get("/")
 def root():
     return {
         "service": "Apex Security API",
-        "version": "2.2.0",
+        "version": "2.2.1",
         "status": "online",
         "docs": "/docs",
         "health": "/health"

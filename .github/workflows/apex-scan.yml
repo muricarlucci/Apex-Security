@@ -1,6 +1,7 @@
 name: Apex Security Scan
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main", "develop", "feature/**"]
   pull_request:
@@ -14,7 +15,25 @@ jobs:
       contents: read
       security-events: write
 
+    env:
+      APEX_API_URL: ${{ secrets.APEX_API_URL }}
+      APEX_USER_API_KEY: ${{ secrets.APEX_USER_API_KEY }}
+      SCAN_REPOSITORY: ${{ github.repository }}
+      SCAN_BRANCH: ${{ github.ref_name }}
+      SCAN_COMMIT: ${{ github.sha }}
+
     steps:
+      - name: Validate Apex integration configuration
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        run: |
+          if [ -z "$APEX_API_URL" ] || [ -z "$APEX_USER_API_KEY" ]; then
+            echo "::error::Configure APEX_API_URL and APEX_USER_API_KEY in GitHub Actions repository secrets."
+            exit 1
+          fi
+          case "$APEX_API_URL" in
+            https://*) ;;
+            *) echo "::error::APEX_API_URL must use HTTPS."; exit 1 ;;
+          esac
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -34,7 +53,7 @@ jobs:
             --json \
             --output=semgrep-results.json \
             --no-error \
-            . || true
+            .
           echo "semgrep_done=true" >> $GITHUB_OUTPUT
 
       - name: Install Trivy
@@ -53,32 +72,31 @@ jobs:
             --output trivy-results.json \
             --scanners vuln,misconfig \
             --exit-code 0 \
-            . || true
+            .
           echo "trivy_done=true" >> $GITHUB_OUTPUT
 
       - name: Send Semgrep results to Apex API
-        if: steps.semgrep.outputs.semgrep_done == 'true'
-        env:
-          APEX_API_URL: ${{ secrets.APEX_API_URL }}
-          # Chave pessoal da conta Apex — cada usuario gera a sua no signup e
-          # cadastra como secret APEX_USER_API_KEY no proprio repositorio.
-          # Sem ela, os alertas entram como dados legados/demo (sem conta).
-          APEX_USER_API_KEY: ${{ secrets.APEX_USER_API_KEY }}
+        if: always() && !cancelled() && steps.semgrep.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
         run: |
-          if [ -f semgrep-results.json ]; then
+          if [ ! -s semgrep-results.json ]; then
+            echo "::error::Scanner output is missing or empty."
+            exit 1
+          fi
+          if [ -s semgrep-results.json ]; then
             PAYLOAD=$(jq -n \
               --arg tool "semgrep" \
-              --arg repo "${{ github.repository }}" \
-              --arg branch "${{ github.ref_name }}" \
-              --arg sha "${{ github.sha }}" \
+              --arg repo "$SCAN_REPOSITORY" \
+              --arg branch "$SCAN_BRANCH" \
+              --arg sha "$SCAN_COMMIT" \
               --rawfile raw semgrep-results.json \
               '{tool: $tool, repository: $repo, branch: $branch, commit_sha: $sha, raw_json: $raw}')
+            printf '%s' "$PAYLOAD" > /tmp/apex-payload.json
             HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST \
-              "${APEX_API_URL}/api/scan" \
+              "${APEX_API_URL%/}/api/scan" \
               -H "Content-Type: application/json" \
               -H "X-Apex-Api-Key: ${APEX_USER_API_KEY}" \
-              -d "$PAYLOAD" \
-              --max-time 30)
+              --data-binary @/tmp/apex-payload.json \
+              --connect-timeout 15 --max-time 120)
             if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
               echo "✅ Scan enviado com sucesso (HTTP $HTTP_CODE)"
             else
@@ -89,28 +107,27 @@ jobs:
           fi
 
       - name: Send Trivy results to Apex API
-        if: steps.trivy.outputs.trivy_done == 'true'
-        env:
-          APEX_API_URL: ${{ secrets.APEX_API_URL }}
-          # Chave pessoal da conta Apex — cada usuario gera a sua no signup e
-          # cadastra como secret APEX_USER_API_KEY no proprio repositorio.
-          # Sem ela, os alertas entram como dados legados/demo (sem conta).
-          APEX_USER_API_KEY: ${{ secrets.APEX_USER_API_KEY }}
+        if: always() && !cancelled() && steps.trivy.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
         run: |
-          if [ -f trivy-results.json ]; then
+          if [ ! -s trivy-results.json ]; then
+            echo "::error::Scanner output is missing or empty."
+            exit 1
+          fi
+          if [ -s trivy-results.json ]; then
             PAYLOAD=$(jq -n \
               --arg tool "trivy" \
-              --arg repo "${{ github.repository }}" \
-              --arg branch "${{ github.ref_name }}" \
-              --arg sha "${{ github.sha }}" \
+              --arg repo "$SCAN_REPOSITORY" \
+              --arg branch "$SCAN_BRANCH" \
+              --arg sha "$SCAN_COMMIT" \
               --rawfile raw trivy-results.json \
               '{tool: $tool, repository: $repo, branch: $branch, commit_sha: $sha, raw_json: $raw}')
+            printf '%s' "$PAYLOAD" > /tmp/apex-payload.json
             HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST \
-              "${APEX_API_URL}/api/scan" \
+              "${APEX_API_URL%/}/api/scan" \
               -H "Content-Type: application/json" \
               -H "X-Apex-Api-Key: ${APEX_USER_API_KEY}" \
-              -d "$PAYLOAD" \
-              --max-time 30)
+              --data-binary @/tmp/apex-payload.json \
+              --connect-timeout 15 --max-time 120)
             if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
               echo "✅ Scan enviado com sucesso (HTTP $HTTP_CODE)"
             else

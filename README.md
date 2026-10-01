@@ -1,4 +1,4 @@
-# Apex Security v2.2.0
+# Apex Security v2.2.1
 
 Plataforma ASPM (Application Security Posture Management), projeto acadêmico de Cibersegurança da FIAP. A Apex Security automatiza detecção, priorização e proposta de correção de vulnerabilidades. Pessoas revisam e decidem o merge de cada Pull Request.
 
@@ -9,7 +9,7 @@ Plataforma ASPM (Application Security Posture Management), projeto acadêmico de
 - [Site de apresentação](https://apex-security-site-apresentacao.vercel.app)
 - [Repositório do dashboard e backend](https://github.com/muricarlucci/Apex-Security)
 
-Versão atual: **v2.2.0**. Consulte o [histórico de mudanças](CHANGELOG.md).
+Versão atual: **v2.2.1**. Consulte o [histórico de mudanças](CHANGELOG.md).
 
 O backend no plano gratuito do Render dorme após 15 minutos sem uso; a primeira resposta pode levar 30 a 50 segundos. O banco usa Neon. Acorde a API antes de uma apresentação.
 
@@ -101,6 +101,8 @@ O dashboard local fica em `http://localhost:5173`. `frontend/.env.example` mostr
 | `SITE_URL` | Origem CORS do site: `https://apex-security-site-apresentacao.vercel.app` |
 
 `APEX_API_URL` **não é variável do backend**. É apenas um secret do GitHub Actions com a URL base do Render; o workflow acrescenta `/api/scan`. Nunca versione `.env`, tokens ou senhas.
+
+A ingestão usa uma única transação para o scan inteiro. O pool verifica conexões antes do uso e recicla conexões com mais de 300 segundos no próximo checkout. Interrupções durante a transação retornam erro; não há replay automático nem garantia de deduplicação entre reenvios. Chave enviada mas inválida retorna 401. Veja o [diagnóstico e as pendências operacionais](docs/DIAGNOSTICO_2026-10-01.md).
 
 ## Segurança e limites conhecidos
 
