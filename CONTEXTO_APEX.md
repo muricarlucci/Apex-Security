@@ -4,7 +4,7 @@
 
 ## Estado e transição
 
-Apex Security é uma plataforma ASPM acadêmica do curso de Cibersegurança da FIAP. O desenvolvimento anterior usou Claude Code em outro computador; Murilo assumiu o projeto e passou a trabalhar com Codex (OpenAI). Os repositórios foram transferidos para a conta atual. Banco Neon, backend Render, dashboard Vercel e site Vercel foram recriados em contas de Murilo, assim como chaves e tokens. O usuário confirmou em 2026-10-01 que salvou ambos os secrets `APEX_API_URL` e `APEX_USER_API_KEY` no GitHub Actions; a confirmação do funcionamento em produção ainda depende dos testes manuais após o push desta versão.
+Apex Security é uma plataforma ASPM acadêmica do curso de Cibersegurança da FIAP. O desenvolvimento anterior usou Claude Code em outro computador; Murilo assumiu o projeto e passou a trabalhar com Codex (OpenAI). Os repositórios foram transferidos para a conta atual. Banco Neon, backend Render, dashboard Vercel e site Vercel foram recriados em contas de Murilo, assim como chaves e tokens. O usuário confirmou em 2026-10-01 que salvou ambos os secrets `APEX_API_URL` e `APEX_USER_API_KEY` no GitHub Actions; a ingestão autenticada foi validada em produção após o deploy v2.2.1, com HTTP 201 para Semgrep e Trivy na segunda tentativa do Actions 36900747354. CORS do dashboard e do site também foi confirmado.
 
 | Peça | Endereço ou configuração |
 | --- | --- |
@@ -78,7 +78,7 @@ No Render: `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_API_KEY_2` opcional, `GEMIN
 
 Já foram corrigidos: workflow que escondia erro de envio; URL temporária de backend que expirava; token GitHub inválido que produzia 401 no Criar PR; transporte de email bloqueado na hospedagem; CORS do dashboard; URL de API fixa em localhost; Python 3.14 sem dependências compatíveis; workflow colocado apenas em `pipeline/`, onde o GitHub não o executa. O usuário informou que tokens e infraestrutura foram recriados; não pressupor que cada integração foi validada em produção.
 
-Pendências conhecidas: testar `/health` e `/docs` após o push, CORS e formulário do site em produção, build do dashboard, pipeline com conta real, criação de PR, webhook do Discord e funcionamento das chaves Gemini. Não há verificação de e-mail, rate limiting ou 2FA; a chave de API fica em texto no banco; scan sem chave ainda aceita dados legados. `Contact.jsx` chama a API ao enviar o formulário mesmo no Modo Demo. O DLP cobre o trecho de código do remediador, mas `intent_checker.py`, `risk_analyzer.py` e `radar.py` podem enviar campos de usuário ao Gemini sem a mesma ofuscação. Tratar isso como limitação real antes de uso comercial.
+Validações confirmadas em 2026-10-01: 79 testes locais passaram; API em v2.2.1, pipeline com conta real (Semgrep e Trivy HTTP 201), rejeição de JSON inválido com 400 e CORS das duas origens. Pendências: envio e recebimento do formulário do site, criação de PR, webhook do Discord e funcionamento do Gemini depois de ajustar o modelo. Não há verificação de e-mail, rate limiting ou 2FA; a chave de API fica em texto no banco; scan sem chave ainda aceita dados legados. `Contact.jsx` chama a API ao enviar o formulário mesmo no Modo Demo. O DLP cobre o trecho de código do remediador, mas `intent_checker.py`, `risk_analyzer.py` e `radar.py` podem enviar campos de usuário ao Gemini sem a mesma ofuscação. Tratar isso como limitação real antes de uso comercial.
 
 Auditoria de 2026-10-01: `pip check` não encontrou dependências incompatíveis, mas isso não equivale a uma auditoria de segurança. `npm audit` encontrou 9 entradas vulneráveis (7 altas, 2 moderadas). OSV apontou avisos para versões fixadas de python-dotenv, pytest, python-jose e python-multipart. Atualização de dependências precisa de avaliação e testes próprios. O print do Radar confirma rejeição de `gemini-2.5-flash-lite` para a conta/projeto atual; configurar `GEMINI_MODEL` no Render para um modelo disponível. Veja [diagnóstico detalhado](docs/DIAGNOSTICO_2026-10-01.md).
 
@@ -87,7 +87,8 @@ Auditoria de 2026-10-01: `pip check` não encontrou dependências incompatíveis
 - v1.x: seis módulos originais, deploy e módulos consultivos 7–11.
 - v2.0.0 (2026-07-24): recursos de produto, Modo Demo, PDF, score e sidebar.
 - v2.1.0 (2026-07-26): contato via Resend e sete idiomas.
-- v2.2.1 (2026-10-01): transição de responsável e infraestrutura, CORS do site, limpeza de referências antigas e documentação reescrita.
+- v2.2.0 (2026-10-01): transição de responsável e infraestrutura, CORS do site, limpeza de referências antigas e documentação reescrita.
+
+- v2.2.1 (2026-10-01): recuperação do pool, ingestão atômica, tratamento explícito de erros e diagnóstico operacional.
 
 A próxima sessão deve começar por este arquivo, README e CHANGELOG, confirmar o estado real do código e da produção e registrar divergências antes de novas mudanças.
-- v2.2.1 (2026-10-01): recuperação do pool, ingestão atômica, tratamento explícito de erros e diagnóstico operacional.

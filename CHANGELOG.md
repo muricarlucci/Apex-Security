@@ -17,6 +17,7 @@
 - Testes isolados do endpoint, desconexão DBAPI real em SQLite, rollback, recuperação, commit ambíguo e detecção do erro SSL pelo dialeto psycopg2.
 - Execução manual do workflow e tentativa independente de envio de Trivy após falha no envio de Semgrep.
 - Relatório de diagnóstico e auditoria com pendências de Gemini, dependências e validação em produção.
+- Verificação concluída: 79 testes locais passaram; após deploy v2.2.1, Semgrep e Trivy receberam HTTP 201 na segunda tentativa do Actions; JSON inválido retornou 400 e CORS das duas origens foi confirmado.
 
 ## v2.2.0 — 2026-10-01
 

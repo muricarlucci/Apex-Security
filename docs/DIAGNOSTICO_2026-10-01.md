@@ -74,4 +74,8 @@ Testes do pool fecham uma conexão ociosa e verificam sua substituição, simula
 
 Resultado local: 79 testes passaram; duas advertências de depreciação de dependências, sem falhas. git diff --check passou. A consulta autenticada ao GitHub confirmou os nomes APEX_API_URL e APEX_USER_API_KEY nos secrets, sem expor valores.
 
-O relatório distingue esses testes locais da validação pós-deploy no Render e GitHub Actions. Resultados de produção devem ser confirmados na execução correspondente; um health check isolado não comprova ingestão autenticada.
+Validação de produção em 2026-10-01: a raiz da API confirmou v2.2.1. A [segunda tentativa do Actions](https://github.com/muricarlucci/Apex-Security/actions/runs/36900747354/attempts/2), commit de código 9ddba38, terminou com sucesso; Semgrep e Trivy receberam HTTP 201. Um POST com JSON inválido recebeu 400. Preflights CORS para dashboard e site receberam 200 e a origem permitida correta.
+
+A primeira tentativa foi disparada enquanto o Render publicava a versão: Semgrep recebeu 500 e Trivy recebeu 201. A repetição foi iniciada somente depois de a raiz confirmar 2.2.1. Não há traceback dessa primeira tentativa nesta análise para atribuir com precisão sua causa. A repetição pode duplicar alertas que o Trivy já havia salvo; a aplicação ainda não deduplica reenvios.
+
+Isso confirma ingestão autenticada em produção naquela execução. Os testes de interrupção foram realizados localmente; não foi derrubada uma conexão do Neon de propósito. Gemini, Resend, Discord e criação de PR continuam exigindo validação própria.
