@@ -1,7 +1,7 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, test_connection, run_additive_migrations
+from services.cors_config import get_allowed_origins
 from routes.scan import router as scan_router
 from routes.remediate import router as remediate_router
 from routes.pullrequest import router as pr_router
@@ -16,19 +16,13 @@ run_additive_migrations()
 
 app = FastAPI(
     title="Apex Security API",
-    description="Plataforma ASPM — Apex Security v2.1",
-    version="2.1.0"
+    description="Plataforma ASPM — Apex Security v2.2",
+    version="2.2.0"
 )
-
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        FRONTEND_URL,
-    ],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +46,7 @@ async def startup_event():
 def root():
     return {
         "service": "Apex Security API",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "status": "online",
         "docs": "/docs",
         "health": "/health"
@@ -61,4 +55,4 @@ def root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "Apex Security API v2.1"}
+    return {"status": "ok", "service": "Apex Security API v2.2"}

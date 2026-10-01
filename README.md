@@ -1,173 +1,109 @@
-# Apex Security v2.1
+# Apex Security v2.2.0
 
-**Plataforma ASPM (Application Security Posture Management)**
-Projeto acadêmico — FIAP Cibersegurança 2026
+Plataforma ASPM (Application Security Posture Management), projeto acadêmico de Cibersegurança da FIAP. A Apex Security automatiza detecção, priorização e proposta de correção de vulnerabilidades. Pessoas revisam e decidem o merge de cada Pull Request.
 
-Versão atual: **v2.1.0** — ver [CHANGELOG.md](CHANGELOG.md)
+## Acessos de produção
 
----
+- [Dashboard](https://apex-security-kappa.vercel.app)
+- [API e Swagger](https://apex-security-xzk4.onrender.com/docs)
+- [Site de apresentação](https://apex-security-site-apresentacao.vercel.app)
+- [Repositório do dashboard e backend](https://github.com/muricarlucci/Apex-Security)
 
-## 🔴 Acesse a plataforma ao vivo
+Versão atual: **v2.2.0**. Consulte o [histórico de mudanças](CHANGELOG.md).
 
-**Dashboard:** https://apex-security-delta.vercel.app
-**API / Documentação interativa:** https://apex-security-api.onrender.com/docs
+O backend no plano gratuito do Render dorme após 15 minutos sem uso; a primeira resposta pode levar 30 a 50 segundos. O banco usa Neon. Acorde a API antes de uma apresentação.
 
-> Nota: o backend usa free tier da Render, que "dorme" após 15 minutos de inatividade.
-> A primeira requisição após um período ocioso pode levar 30-50 segundos para responder
-> enquanto o servidor acorda — isso é esperado e não é um bug.
+## Fluxo
 
----
+Um push aciona o workflow do repositório do cliente. Semgrep e Trivy rodam na CPU do GitHub Actions desse repositório e enviam os resultados a `POST /api/scan` com o header `X-Apex-Api-Key`. O backend normaliza para ASU, aplica regras determinísticas de priorização e associa os alertas à conta da chave. No dashboard, o usuário pode solicitar remediação via Gemini, criar um PR para revisão humana, mapear risco e ver uma sugestão de SLA. A varredura pesada não roda no servidor da Apex, mantendo o custo operacional próximo de zero nos planos gratuitos.
 
-## O que é
+## Arquitetura: 11 módulos
 
-A Apex Security automatiza o ciclo completo de detecção, priorização e remediação de vulnerabilidades de código. O desenvolvedor sobe código, os scanners rodam no pipeline CI/CD, os alertas são normalizados e priorizados por contexto, e a remediação é gerada por LLM (com secrets protegidos por DLP) e entregue como Pull Request — sempre com revisão humana obrigatória antes do merge.
+| Módulo | Função |
+| --- | --- |
+| 1. Pipeline CI/CD | GitHub Actions, Semgrep e Trivy |
+| 2. Normalização ASU | JSON canônico de scanners; veja [o schema](docs/asu-schema.md) |
+| 3. Priorização IaC | Regras determinísticas e explicáveis; fonte oficial da severidade ajustada |
+| 4. DLP de borda | Ofusca segredos no trecho de código enviado pela remediação e reverte no resultado |
+| 5. Remediação via Gemini | Gera patch e teste unitário obrigatório em JSON |
+| 6. Pull Request | Cria branch, commits e PR via PyGitHub; nunca faz merge sozinho |
+| 7. Análise de anomalias | Isolation Forest; sinal consultivo, sem substituir o módulo 3 |
+| 8. Verificador de intenção | Compara mensagem de commit e diff via Gemini; alerta informativo |
+| 9. Risco Real | Estimativa FAIR/LGPD/downtime, grafo de blast radius e sugestão de SLA |
+| 10. Autenticação multi-tenant | JWT, bcrypt, isolamento por `user_id` e chave de integração por usuário |
+| 11. Radar | Panorama setorial via Gemini; síntese do modelo, sem busca ao vivo |
 
-## Arquitetura — 11 Módulos
+A numeração aparece na documentação, nunca na interface. Estimativas de risco e SLA, anomalias, intenção e Radar são apoio à decisão; não são conclusões definitivas.
 
-| Módulo | Função | Status |
-|--------|--------|--------|
-| 1 — Pipeline CI/CD | GitHub Actions + Semgrep + Trivy | ✅ Completo |
-| 2 — Normalização ASU | JSON canônico unificado | ✅ Completo |
-| 3 — Priorização IaC | Regras determinísticas de contexto | ✅ Completo |
-| 4 — DLP de Borda | Ofuscação de secrets via Regex | ✅ Completo |
-| 5 — Remediação Gemini | Patch + teste unitário automático | ✅ Completo |
-| 6 — Pull Request | Branch + commit + PR com revisão humana | ✅ Completo |
-| 7 — Análise de Anomalias | Isolation Forest — sinal estatístico consultivo | ✅ Completo |
-| 8 — Verificador de Intenção | Consistência commit vs código via LLM | ✅ Completo |
-| 9 — Risco Real | Estimativa financeira (FAIR/LGPD) + Blast Radius + SLA de Compliance | ✅ Completo |
-| 10 — Autenticação Multi-tenant | Contas isoladas: cada empresa vê apenas os próprios dados | ✅ Completo |
-| 11 — Radar | Panorama de ameaças setoriais | ✅ Completo |
+Recursos adicionais: sidebar de Chave de Integração, Conta, Contato, Notificações e Idioma; fallback entre chaves Gemini; contato via Resend; webhook do Discord; Modo Demo; relatórios PDF; Security Health Score; data e hora dos alertas; sete idiomas com cobertura parcial. Chinês, hindi e japonês ainda precisam de revisão nativa.
 
-E um **Dashboard React** (identidade visual preto e dourado) com 9 páginas: Login/Signup, Dashboard, Alertas, Remediações, Pull Requests, Risco Real, Repositórios e — agrupadas sob "Avançados" — Anomalias, Intenção e Radar.
+## Infraestrutura
 
-> **Numeração de módulos:** toda funcionalidade nova é documentada como um Módulo numerado sequencialmente (o próximo seria o Módulo 12), mantendo o padrão dos 6 módulos originais da arquitetura. A numeração aparece apenas nesta documentação — **nunca na interface visível ao usuário final**.
+| Componente | Hospedagem | Configuração |
+| --- | --- | --- |
+| Backend FastAPI | Render, free tier | Banco, chaves e origens CORS |
+| PostgreSQL | Neon, free tier | Tabelas via SQLAlchemy no startup; alterações aditivas legadas em `database.py` |
+| Dashboard React/Vite | Vercel, free tier | Root Directory `frontend`; `VITE_API_URL` entra no build |
+| Site de apresentação | Vercel, free tier, repositório separado | Formulário usa `POST /api/contact` |
+| Pipeline do cliente | GitHub Actions | Secrets `APEX_API_URL` e `APEX_USER_API_KEY` |
 
-## Como conectar seu próprio repositório
+Mudar `VITE_API_URL` na Vercel exige Redeploy. O CORS da API aceita localhost, `FRONTEND_URL` para o dashboard e `SITE_URL` para o site.
 
-1. Crie uma conta em **Criar conta** no dashboard — a plataforma gera uma **chave de API** exclusiva
-2. Copie a chave exibida logo após o cadastro
-3. No **seu** repositório GitHub: Settings → Secrets and variables → Actions → New repository secret
-   - Nome: `APEX_USER_API_KEY` · Valor: a chave copiada
-   - Adicione também `APEX_API_URL` com `https://apex-security-api.onrender.com`
-4. Copie o workflow [.github/workflows/apex-scan.yml](.github/workflows/apex-scan.yml) para o seu repositório
-5. Faça um push — os alertas aparecem **apenas na sua conta**
+## Conectar um repositório
 
-## Módulos 7, 8 e 9 — consultivos, não substituem os módulos principais
+1. Crie uma conta no [dashboard](https://apex-security-kappa.vercel.app).
+2. Abra **Chave de Integração** na sidebar e copie a chave da conta.
+3. No repositório cliente, crie os secrets do GitHub Actions: `APEX_USER_API_KEY` com essa chave e `APEX_API_URL` com `https://apex-security-xzk4.onrender.com`, sem `/api` e sem barra final.
+4. Copie [.github/workflows/apex-scan.yml](.github/workflows/apex-scan.yml) para `.github/workflows/` do repositório cliente. A cópia em `pipeline/` é apenas referência.
+5. Faça um push, confira o Actions e os alertas na sua conta. O workflow usa `github.repository` dinamicamente e sinaliza falhas HTTP.
 
-Complementos que retomam ideias da arquitetura original, agora viáveis porque o banco de produção acumula alertas reais a cada push. **Ambos são aditivos e informativos**: o motor de priorização determinístico ([prioritizer.py](backend/services/prioritizer.py)) continua sendo a fonte oficial e explicável de verdade do sistema, e o Módulo 6 continua sendo a governança que exige revisão humana.
+## Para desenvolvedores
 
-| Módulo | O que faz | Endpoint | Página |
-|---|---|---|---|
-| 7 — Isolation Forest | Segunda opinião **estatística** — sinaliza alertas que fogem do padrão da base (scikit-learn). Requer ≥ 10 alertas; abaixo disso exibe aviso de volume insuficiente (comportamento esperado, não erro). Não substitui as regras do Módulo 3. | `GET /api/anomaly-analysis` | `/anomaly-analysis` |
-| 8 — Intent Checker | Versão **heurística simplificada** do Intent Engine: compara a mensagem do commit com o diff via Gemini e sinaliza divergências. Não integra Jira/Trello e **nunca bloqueia** PRs/merges — apenas informa. | `POST /api/intent-check` | `/intent-checker` |
-| 9 — Risco Real | Traduz a vulnerabilidade em **impacto financeiro estimado** (modelo FAIR + multa LGPD + custo de inatividade) e desenha o **blast radius** — o caminho plausível de propagação até um ativo crítico. Inclui o **SLA de Compliance**: prazo sugerido de correção e nível de risco regulatório. Calibrado pelo Perfil da Empresa. Os valores são **estimativas analíticas de apoio à decisão**, não números contábeis oficiais nem prazos legais. | `POST /api/risk-assessment/{id}`, `POST /api/sla-assessment/{id}`, `GET/POST /api/company-profile` | `/real-risk` |
-| 11 — Radar | Panorama executivo das ameaças mais relevantes para o setor da empresa. **Não é busca ao vivo na internet** — é uma síntese do conhecimento do modelo de IA, e a interface declara isso explicitamente. | `GET /api/radar` | `/radar` |
+Use Python **3.11.x**. No PowerShell, a partir da raiz:
 
-## Stack Tecnológico
-
-- **Backend:** Python 3.11.9 + FastAPI + SQLAlchemy
-- **Banco:** PostgreSQL 18.4
-- **Frontend:** React + Vite + Recharts
-- **CI/CD:** GitHub Actions
-- **Scanners:** Semgrep (SAST) + Trivy (IaC/containers)
-- **LLM:** Gemini API — gemini-2.5-flash-lite
-- **ML:** scikit-learn (Isolation Forest)
-- **Grafo de propagação:** reactflow
-- **Autenticação:** JWT (python-jose) + bcrypt (passlib)
-- **Relatórios:** jsPDF + jspdf-autotable
-- **Notificações:** webhook do Discord · **E-mail:** Resend (API HTTPS)
-- **Internacionalização:** react-i18next — 7 idiomas
-- **Integração GitHub:** PyGitHub
-
-## Infraestrutura de produção
-
-| Componente | Serviço | Plano |
-|---|---|---|
-| Backend (API) | Render.com | Free tier |
-| Banco de dados | Neon.tech | Free tier |
-| Frontend (Dashboard) | Vercel | Free tier |
-
-## Para desenvolvedores — rodar localmente
-
-> Esta seção é opcional e destinada a quem quer contribuir com o código ou
-> rodar testes localmente. A plataforma já está disponível publicamente
-> no link acima — não é necessário instalar nada para usá-la.
-
-### Backend
-
-```bash
+```powershell
 cd backend
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-source .venv/bin/activate     # Mac/Linux
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cp .env.example .env
-# Editar .env com suas credenciais
+copy .env.example .env
+# Preencha as credenciais locais em .env
 uvicorn main:app --reload
 ```
 
-API em: http://localhost:8000
-Documentação: http://localhost:8000/docs
+A API local fica em `http://localhost:8000`; o Swagger, em `http://localhost:8000/docs`. Iniciar o backend cria ou atualiza tabelas no banco configurado; use um banco de desenvolvimento. Em outro terminal:
 
-### Frontend
-
-```bash
+```powershell
 cd frontend
 npm install
+copy .env.example .env.local
+# Em .env.local, use VITE_API_URL=http://localhost:8000/api
 npm run dev
 ```
 
-Dashboard em: http://localhost:5173
+O dashboard local fica em `http://localhost:5173`. `frontend/.env.example` mostra a URL de produção; substitua-a em `.env.local` para uso local. Veja também o [guia de deploy](DEPLOY.md).
 
-> O backend (porta 8000) e o frontend (porta 5173) precisam estar rodando ao mesmo tempo para o dashboard funcionar.
+### Variáveis do backend
 
-## Variáveis de ambiente (.env)
+| Variável | Uso |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL do Neon ou banco local |
+| `GEMINI_API_KEY` | Chave principal do Gemini |
+| `GEMINI_API_KEY_2` | Chave opcional de fallback |
+| `GEMINI_MODEL` | Modelo; padrão `gemini-2.5-flash-lite` |
+| `GITHUB_TOKEN` | PAT para criar branches, commits e PRs |
+| `GITHUB_REPO` | Repositório alvo; padrão `muricarlucci/Apex-Security` |
+| `JWT_SECRET_KEY` | Assinatura dos JWTs |
+| `RESEND_API_KEY` | Envio do formulário de contato |
+| `CONTACT_EMAIL_TO` | Destinatário do contato |
+| `RESEND_FROM_ADDRESS` | Remetente autorizado no Resend |
+| `FRONTEND_URL` | Origem CORS do dashboard: `https://apex-security-kappa.vercel.app` |
+| `SITE_URL` | Origem CORS do site: `https://apex-security-site-apresentacao.vercel.app` |
 
-```
-DATABASE_URL=postgresql://postgres:SENHA@localhost:5432/apex_db
-GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-2.5-flash-lite
-GITHUB_TOKEN=ghp_...
-GITHUB_REPO=Guicatto/Apex-Security
-APEX_API_URL=http://localhost:8000
-FRONTEND_URL=http://localhost:5173
-```
+`APEX_API_URL` **não é variável do backend**. É apenas um secret do GitHub Actions com a URL base do Render; o workflow acrescenta `/api/scan`. Nunca versione `.env`, tokens ou senhas.
 
-> Em produção, `APEX_API_URL` aponta para a própria URL do Render
-> (`https://apex-security-api.onrender.com`) e é configurada como secret no GitHub Actions,
-> para que o pipeline envie os resultados dos scanners ao backend hospedado.
+## Segurança e limites conhecidos
 
-O `.env` nunca é commitado (está no `.gitignore`). Use o `backend/.env.example` como template.
+Há hash de senha com bcrypt, JWT com expiração, HTTPS em produção, isolamento de dados por `user_id` e revisão humana antes do merge. A remediação ofusca segredos no trecho de código antes de enviá-lo ao Gemini. Essa proteção ainda não cobre todos os campos de todos os serviços de LLM, como o diff do verificador de intenção e o contexto do perfil da empresa.
 
-## Schema ASU (Apex Standard Unified)
-
-Todo output de scanner é normalizado para um JSON canônico único antes de ser salvo — ver a especificação completa em [docs/asu-schema.md](docs/asu-schema.md).
-
-## Fluxo de funcionamento
-
-1. Dev faz push no repositório
-2. GitHub Actions dispara Semgrep e Trivy automaticamente
-3. Resultados enviados via POST para `/api/scan`
-4. Normalização ASU converte para JSON canônico
-5. Priorização por contexto IaC ajusta a severidade
-6. No dashboard, clicar em "Remediar" em qualquer alerta
-7. DLP ofusca secrets → Gemini gera patch + teste → DLP reverte
-8. Clicar em "Criar PR" abre Pull Request no GitHub
-9. Equipe revisa e aprova — merge humano obrigatório
-
-## Decisões de arquitetura
-
-- **Custo zero de processamento:** a varredura pesada roda na CPU do pipeline do cliente
-- **DLP antes do LLM:** nenhum secret sai da rede antes da ofuscação
-- **Human-in-the-loop:** nenhum merge autônomo — revisão humana sempre obrigatória
-- **Modelo Gemini:** gemini-2.5-flash-lite (gemini-1.5-flash foi descontinuado; gemini-2.0-flash tem cota zero no free tier desta conta)
-
-## Testes
-
-```bash
-cd apex-security          # raiz do projeto
-backend\.venv\Scripts\activate
-pytest tests/ -v
-```
-
-37 testes unitários cobrindo normalização ASU, priorização, DLP e remediação (com mock — não consomem cota do Gemini).
+Ainda não há verificação de e-mail, rate limiting nem 2FA. A chave de integração é armazenada em texto no banco. O endpoint de scan aceita ausência de chave e grava dados legados sem usuário. No Modo Demo, enviar o formulário da página Contato ainda faz chamada real. Essas limitações exigem atenção antes de uso comercial.

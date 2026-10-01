@@ -12,5 +12,8 @@ Leia nesta ordem: CONTEXTO_APEX.md, README.md, CHANGELOG.md. Eles têm o estado 
 - Numeração de módulos (Módulo 9, 10...) só aparece em README e CONTEXTO, nunca na interface.
 - Human-in-the-loop: nenhuma IA faz merge sozinha.
 - Toda sessão de desenvolvimento incrementa a versão (VERSION), registra no CHANGELOG.md e atualiza o CONTEXTO_APEX.md.
-- Não faça git push. Faça commit e me avise; eu envio.
-- Antes de mudanças grandes, resuma o plano e espere confirmação.
+- Os caminhos do workspace têm espaços: use aspas em comandos de shell. A raiz deste repositório é "D:\DASHBOARD APEX\Apex-Security".
+- FRONTEND_URL e SITE_URL alimentam as origens permitidas pelo CORS. Mantenha as URLs sem barra final.
+- Em testes automáticos, não inicie o servidor nem chame Gemini, GitHub ou Resend; use mocks.
+- Ao final de cada sessão de desenvolvimento autorizada, execute git add, git commit e git push origin main a partir da raiz do repositório. Confirme com git status e git log origin/main..HEAD que não há mudanças ou commits pendentes.
+- Nunca embuta token na URL do Git. Se o push falhar por autenticação ou rede, pare e peça ao usuário para executar git push no terminal dele; o Git Credential Manager pode reautenticar pelo navegador.

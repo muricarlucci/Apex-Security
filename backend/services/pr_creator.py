@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "Guicatto/Apex-Security")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "muricarlucci/Apex-Security")
 
 AUTH_ERROR_MESSAGE = (
     "Token do GitHub invalido ou expirado — verifique GITHUB_TOKEN "

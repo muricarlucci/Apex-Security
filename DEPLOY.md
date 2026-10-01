@@ -1,71 +1,84 @@
-# Guia de Deploy — Apex Security v2.0
+# Deploy da Apex Security v2.2.0
 
-Este documento cobre o processo de colocar a Apex Security em produção,
-acessível publicamente sem depender de nenhum computador específico.
+Este guia documenta o dashboard/backend no repositório [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security). O site de apresentação fica em outro repositório. URLs atuais: [API](https://apex-security-xzk4.onrender.com/docs), [dashboard](https://apex-security-kappa.vercel.app) e [site](https://apex-security-site-apresentacao.vercel.app). Render, Neon e Vercel usam planos gratuitos; confirme os limites atuais nos respectivos painéis.
 
-## Arquitetura de produção
+Siga esta ordem: **Neon → Render → Vercel dashboard → `FRONTEND_URL` no Render → Vercel site → `SITE_URL` no Render → secrets do GitHub**.
 
-| Componente | Serviço | URL após deploy |
-|---|---|---|
-| Backend (API) | Render.com | https://apex-security-api.onrender.com |
-| Banco de dados | Neon.tech | interno, via DATABASE_URL |
-| Frontend (Dashboard) | Vercel | https://apex-security.vercel.app |
+## 1. Neon: PostgreSQL
 
-Nenhuma dessas contas exige cartão de crédito. Todas têm free tier suficiente para uso acadêmico.
+Crie o projeto na conta atual e copie a connection string para `DATABASE_URL` no Render. Não grave a URL com senha no repositório. O backend usa SQLAlchemy: `Base.metadata.create_all` cria as tabelas ausentes no import de `main.py`. O arquivo `database.py` também executa alterações aditivas legadas para colunas e índices no startup; não há conjunto de arquivos de migração Alembic. Não rode SQL manual nem introduza novas migrações sem combinar.
 
-## Passo 1 — Banco de dados (Neon.tech)
+## 2. Render: backend FastAPI
 
-1. Criar conta em neon.tech (login com GitHub facilita)
-2. Criar novo projeto — nome: `apex-security`
-3. Copiar a **Connection String** fornecida (formato `postgresql://...`)
-4. Rodar as migrações — ver seção "Criar tabelas" abaixo
+Crie ou confira o Web Service ligado à branch `main`. Deixe **Root Directory vazio**. Para criação pelo formulário manual, use:
 
-## Passo 2 — Backend (Render.com)
+| Campo | Valor |
+| --- | --- |
+| Build Command | `cd backend && pip install -r requirements.txt` |
+| Start Command | `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Health Check Path | `/health` |
+| `PYTHON_VERSION` | `3.11.9`, obrigatório no formulário manual |
 
-1. Criar conta em render.com (login com GitHub facilita)
-2. **New +** → **Web Service** → conectar o repositório `Apex-Security`
-3. O Render vai detectar o `render.yaml` automaticamente
-4. Preencher as variáveis marcadas como `sync: false`:
-   - `DATABASE_URL` (da Neon, passo 1)
-   - `GEMINI_API_KEY`
-   - `GITHUB_TOKEN`
-   - `FRONTEND_URL` (preencher DEPOIS do passo 3, com a URL do Vercel)
-5. Deploy — aguardar o build completar
-6. Copiar a URL gerada (ex: `https://apex-security-api.onrender.com`)
+O [`render.yaml`](render.yaml) também descreve o serviço. Preencha as variáveis marcadas com `sync: false` no painel do Render, sem salvar segredos em arquivos versionados.
 
-## Passo 3 — Frontend (Vercel)
+| Variável | Valor ou origem |
+| --- | --- |
+| `DATABASE_URL` | Connection string do Neon, com SSL |
+| `GEMINI_API_KEY` | Chave principal regenerada |
+| `GEMINI_API_KEY_2` | Chave opcional de fallback |
+| `GEMINI_MODEL` | `gemini-2.5-flash-lite`, configurável |
+| `GITHUB_TOKEN` | PAT da conta atual, usado para criar PRs |
+| `GITHUB_REPO` | `muricarlucci/Apex-Security` |
+| `JWT_SECRET_KEY` | Segredo forte; `render.yaml` usa `generateValue: true` |
+| `RESEND_API_KEY` | Chave de envio do contato |
+| `CONTACT_EMAIL_TO` | Destinatário do formulário |
+| `RESEND_FROM_ADDRESS` | Remetente autorizado no Resend |
+| `FRONTEND_URL` | `https://apex-security-kappa.vercel.app` |
+| `SITE_URL` | `https://apex-security-site-apresentacao.vercel.app` |
 
-1. Criar conta em vercel.com (login com GitHub facilita)
-2. **Add New** → **Project** → importar o repositório `Apex-Security`
-3. **Root Directory:** selecionar `frontend`
-4. Adicionar variável de ambiente:
-   - `VITE_API_URL` = URL do backend do passo 2 + `/api`
-     (ex: `https://apex-security-api.onrender.com/api`)
-5. Deploy
-6. Copiar a URL gerada (ex: `https://apex-security.vercel.app`)
+Informe as origens CORS sem espaços e sem barra final. `SITE_URL` e `FRONTEND_URL` alimentam o middleware de CORS; uma variável ausente é ignorada sem impedir o startup. Em produção, o formulário do site chama `POST https://apex-security-xzk4.onrender.com/api/contact`.
 
-## Passo 4 — Conectar tudo
+Depois do deploy, confira [`/health`](https://apex-security-xzk4.onrender.com/health) e [`/docs`](https://apex-security-xzk4.onrender.com/docs). O Render gratuito pode dormir após 15 minutos sem uso; um cold start pode levar 30 a 50 segundos.
 
-1. Voltar no Render → **Environment** → atualizar `FRONTEND_URL` com a URL do Vercel
-2. Voltar no GitHub → **Settings → Secrets and variables → Actions**
-3. Atualizar o secret `APEX_API_URL` com a URL do backend do Render
-   (permanente, substituindo qualquer URL antiga de ngrok)
-4. Fazer um commit de teste e confirmar que o Actions consegue enviar dados
-   (com a correção aplicada no workflow, uma falha de envio agora aparece
-   claramente como ❌ com o código HTTP — nada mais é mascarado)
+## 3. Vercel: dashboard
 
-## Nota sobre o free tier do Render
+Importe este repositório na Vercel e defina **Root Directory = `frontend`**. Defina `VITE_API_URL=https://apex-security-xzk4.onrender.com/api`, com `/api` no final e sem barra depois. Publique e confira [o dashboard](https://apex-security-kappa.vercel.app). Variáveis `VITE_` são incorporadas ao build; qualquer mudança requer **Redeploy**.
 
-O plano gratuito "dorme" o backend após 15 minutos sem requisições.
-A primeira chamada depois disso demora 30–50 segundos para responder
-enquanto o servidor acorda. Isso é normal e esperado em qualquer
-free tier de mercado. Recomenda-se acessar o dashboard alguns minutos
-antes de qualquer demonstração ao vivo para garantir que o backend
-já esteja ativo.
+## 4. Render: origem do dashboard
 
-## Criar tabelas no banco Neon
+No painel do Render, confira `FRONTEND_URL=https://apex-security-kappa.vercel.app` e salve. O backend precisa reiniciar para montar a lista atualizada de origens CORS.
 
-Após configurar o `DATABASE_URL` do Neon no backend, as tabelas são
-criadas automaticamente no primeiro start da aplicação, via
-`Base.metadata.create_all(bind=engine)` em `main.py` — não é necessário
-rodar SQL manual.
+## 5. Vercel: site de apresentação
+
+Confirme o deploy do [site](https://apex-security-site-apresentacao.vercel.app) no repositório separado. Configure o formulário para usar a API no Render. Este guia não altera o código do site.
+
+## 6. Render: origem do site
+
+Confira `SITE_URL=https://apex-security-site-apresentacao.vercel.app`, exatamente, sem barra final. Salve e espere o backend reiniciar. O CORS deve permitir o `POST /api/contact` iniciado no navegador a partir do site.
+
+## 7. GitHub Actions: secrets do repositório cliente
+
+Em **Settings → Secrets and variables → Actions** do repositório que será analisado, crie:
+
+| Secret | Valor |
+| --- | --- |
+| `APEX_API_URL` | `https://apex-security-xzk4.onrender.com`, sem `/api` e sem barra final |
+| `APEX_USER_API_KEY` | Chave exibida em **Chave de Integração** de uma conta do dashboard |
+
+Copie o workflow da raiz [`.github/workflows/apex-scan.yml`](.github/workflows/apex-scan.yml) para o repositório cliente. A cópia em `pipeline/` é referência e deve permanecer idêntica. O workflow acrescenta `/api/scan` à URL base, usa `github.repository` para identificar o repositório e falha visivelmente quando o envio HTTP não é 2xx. `APEX_API_URL` não é variável do backend.
+
+## Renovar o token de GitHub usado pelo backend
+
+O `GITHUB_TOKEN` é um PAT classic da conta atual. Ao gerar ou renovar, escolha validade de **90 dias** e os escopos **`repo`** e **`workflow`**. No Render, abra o Web Service → **Environment**, substitua `GITHUB_TOKEN` e salve; o serviço reinicia. Não coloque o PAT na URL do Git remoto nem no repositório. Valide com um PR de teste em um alerta já remediado, com revisão humana.
+
+## Verificação de ponta a ponta
+
+1. Acesse `/health` e `/docs` do Render; aguarde o cold start se necessário.
+2. Abra o dashboard na Vercel, crie ou acesse uma conta e confira a Chave de Integração.
+3. Faça push em um repositório cliente com os dois secrets e o workflow; confira os jobs Semgrep e Trivy e o status HTTP de envio.
+4. Confirme que os alertas aparecem somente na conta dona da chave.
+5. Teste Remediar, Criar PR (sem merge automático), Risco Real e SLA em dados apropriados.
+6. Teste o formulário de contato do site no navegador; valide CORS e o recebimento via Resend.
+7. Antes de demonstrações, acorde o backend e abra o dashboard com antecedência.
+
+Para testes locais sem iniciar o servidor, execute `pytest tests/ -v` a partir da raiz com o ambiente Python 3.11 do backend ativado. No `frontend/`, execute `npm run build`. Os testes devem usar mocks e não chamar Gemini, GitHub ou Resend.

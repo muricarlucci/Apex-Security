@@ -24,8 +24,10 @@ services:
       - key: GITHUB_TOKEN
         sync: false
       - key: GITHUB_REPO
-        value: Guicatto/Apex-Security
+        value: muricarlucci/Apex-Security
       - key: FRONTEND_URL
+        sync: false
+      - key: SITE_URL
         sync: false
       - key: JWT_SECRET_KEY
         generateValue: true

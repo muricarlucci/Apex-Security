@@ -1,5 +1,24 @@
 # Changelog — Apex Security
 
+## v2.2.0 — 2026-10-01
+
+### Alterado
+
+- Projeto assumido por novo responsável; repositórios, Render, Neon e Vercel recriados nas contas atuais.
+- Desenvolvimento passa de Claude Code para Codex (OpenAI).
+- README, DEPLOY e CONTEXTO_APEX reescritos para a infraestrutura atual.
+- Padrão de GITHUB_REPO e exemplos de URLs atualizados para a conta atual.
+
+### Adicionado
+
+- CORS também permite o site de apresentação por SITE_URL, com normalização de origens e testes unitários.
+- SITE_URL documentada no Render, exemplo do backend e guias de operação.
+
+### Removido
+
+- Referências operacionais a URLs temporárias, transporte de email antigo e conta anterior.
+- APEX_API_URL do exemplo de ambiente do backend; continua somente como secret do GitHub Actions.
+
 ## v2.1.0 — 2026-07-26
 
 ### Corrigido
