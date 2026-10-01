@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:i18n": "node scripts/check-locales.mjs",
+    "test:i18n:browser": "node scripts/check-language-browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

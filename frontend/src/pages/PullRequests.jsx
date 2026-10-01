@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import Card from '../components/Card'
 import { getPRs } from '../services/api'
@@ -11,6 +12,7 @@ const statusConfig = {
 }
 
 export default function PullRequests() {
+  const tx = useInterfaceText()
   const [prs, setPRs] = useState([])
   const [loading, setLoading] = useState(true)
   const { isDemoMode } = useDemoMode()
@@ -29,21 +31,15 @@ export default function PullRequests() {
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px' }}>
-          Pull Requests
-        </h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Correções automáticas aguardando revisão humana
-        </p>
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px' }}>{tx("Pull Requests")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Correções automáticas aguardando revisão humana")}</p>
       </div>
 
-      {loading ? (
-        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>CARREGANDO...</div>
+      {tx(loading ? (
+        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{tx("CARREGANDO...")}</div>
       ) : prs.length === 0 ? (
         <Card>
-          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>
-            Nenhum Pull Request criado ainda. Vá para Alertas e clique em "Criar PR".
-          </div>
+          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>{tx("Nenhum Pull Request criado ainda. Vá para Alertas e clique em \"Criar PR\".")}</div>
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -70,16 +66,15 @@ export default function PullRequests() {
                   fontWeight: '700',
                   letterSpacing: '0.1em',
                   flexShrink: 0,
-                }}>{status.label}</span>
+                }}>{tx(status.label)}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', marginBottom: '2px' }}>
-                    PR #{pr.pr_number} — Alert #{pr.alert_id}
+                  <div style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', marginBottom: '2px' }}>{tx("PR #")}{tx(pr.pr_number)}{tx(" — Alert #")}{tx(pr.alert_id)}
                   </div>
                   <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#8A7A5A' }}>
                     {pr.branch_name}
                   </div>
                 </div>
-                {pr.pr_url && (
+                {tx(pr.pr_url && (
                   <a
                     href={pr.pr_url}
                     target="_blank"
@@ -96,15 +91,13 @@ export default function PullRequests() {
                       letterSpacing: '0.08em',
                       textDecoration: 'none',
                     }}
-                  >
-                    VER NO GITHUB →
-                  </a>
-                )}
+                  >{tx("VER NO GITHUB →")}</a>
+                ))}
               </div>
             )
           })}
         </div>
-      )}
+      ))}
     </div>
   )
 }

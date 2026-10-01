@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState } from 'react'
 import Card from '../components/Card'
 import { checkIntent } from '../services/api'
@@ -39,6 +40,7 @@ const fieldStyle = {
 }
 
 export default function IntentChecker() {
+  const tx = useInterfaceText()
   const [commitMessage, setCommitMessage] = useState('')
   const [codeDiff, setCodeDiff] = useState('')
   const [result, setResult] = useState(null)
@@ -85,21 +87,14 @@ export default function IntentChecker() {
           color: '#F0E6C8',
           letterSpacing: '0.05em',
           marginBottom: '4px',
-        }}>Verificador de Intenção</h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Verifique se o código de um commit realmente corresponde ao que foi declarado
-        </p>
+        }}>{tx("Verificador de Intenção")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Verifique se o código de um commit realmente corresponde ao que foi declarado")}</p>
       </div>
 
       {/* Cabeçalho explicativo — informativo, nunca bloqueia */}
       <Card style={{ marginBottom: '24px', borderLeft: '2px solid #8B6914' }}>
-        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>
-          Esta é uma verificação de auditoria de intenção: compara a mensagem de commit declarada
-          com o código real alterado, usando IA generativa para identificar divergências suspeitas.
-          Este é um{' '}
-          <strong style={{ color: '#E8C97A' }}>alerta informativo</strong> — nunca bloqueia
-          Pull Requests ou merges automaticamente.
-        </p>
+        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>{tx("Esta é uma verificação de auditoria de intenção: compara a mensagem de commit declarada com o código real alterado, usando IA generativa para identificar divergências suspeitas. Este é um")}{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("alerta informativo")}</strong>{tx(" — nunca bloqueia Pull Requests ou merges automaticamente.")}</p>
       </Card>
 
       {/* Botões de exemplo */}
@@ -118,9 +113,7 @@ export default function IntentChecker() {
             letterSpacing: '0.08em',
             cursor: 'pointer',
           }}
-        >
-          EXEMPLO: COMMIT HONESTO
-        </button>
+        >{tx("EXEMPLO: COMMIT HONESTO")}</button>
         <button
           onClick={() => loadExample('suspicious')}
           style={{
@@ -135,27 +128,25 @@ export default function IntentChecker() {
             letterSpacing: '0.08em',
             cursor: 'pointer',
           }}
-        >
-          EXEMPLO: COMMIT SUSPEITO
-        </button>
+        >{tx("EXEMPLO: COMMIT SUSPEITO")}</button>
       </div>
 
       {/* Formulário em duas colunas */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <Card>
-          <label style={labelStyle}>Mensagem do commit</label>
+          <label style={labelStyle}>{tx("Mensagem do commit")}</label>
           <input
             type="text"
             value={commitMessage}
             onChange={e => setCommitMessage(e.target.value)}
-            placeholder='ex: fix: corrigir validacao de e-mail'
+            placeholder={tx("ex: fix: corrigir validacao de e-mail")}
             style={{ ...fieldStyle, fontFamily: 'Inter' }}
             onFocus={e => { e.currentTarget.style.borderColor = '#C9A84C' }}
             onBlur={e => { e.currentTarget.style.borderColor = '#2A2200' }}
           />
         </Card>
         <Card>
-          <label style={labelStyle}>Diff do código</label>
+          <label style={labelStyle}>{tx("Diff do código")}</label>
           <textarea
             value={codeDiff}
             onChange={e => setCodeDiff(e.target.value)}
@@ -188,11 +179,11 @@ export default function IntentChecker() {
           marginBottom: '24px',
         }}
       >
-        {loading ? 'ANALISANDO...' : 'ANALISAR CONSISTÊNCIA'}
+        {tx(loading ? 'ANALISANDO...' : 'ANALISAR CONSISTÊNCIA')}
       </button>
 
       {/* Resultado */}
-      {result && (
+      {tx(result && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
             <span style={{
@@ -209,23 +200,20 @@ export default function IntentChecker() {
                 ? '0 0 16px rgba(26, 107, 60, 0.25)'
                 : '0 0 16px rgba(192, 57, 43, 0.25)',
             }}>
-              {result.consistent ? '✓ CONSISTENTE' : '✗ DIVERGÊNCIA DETECTADA'}
+              {tx(result.consistent ? '✓ CONSISTENTE' : '✗ DIVERGÊNCIA DETECTADA')}
             </span>
-            <span style={{ fontFamily: 'Raleway', fontSize: '13px', color: '#8A7A5A' }}>
-              Confiança:{' '}
-              <strong style={{ color: '#E8C97A', fontFamily: 'JetBrains Mono' }}>{result.confidence}%</strong>
+            <span style={{ fontFamily: 'Raleway', fontSize: '13px', color: '#8A7A5A' }}>{tx("Confiança:")}{tx(' ')}
+              <strong style={{ color: '#E8C97A', fontFamily: 'JetBrains Mono' }}>{tx(result.confidence)}%</strong>
             </span>
           </div>
           <Card>
-            <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '10px' }}>
-              Explicação da análise
-            </div>
+            <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '10px' }}>{tx("Explicação da análise")}</div>
             <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>
-              {result.explanation}
+              {tx(result.explanation)}
             </p>
           </Card>
         </div>
-      )}
+      ))}
     </div>
   )
 }

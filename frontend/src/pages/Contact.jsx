@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState } from 'react'
 import Card from '../components/Card'
 import { sendContact } from '../services/api'
@@ -14,6 +15,7 @@ const fieldStyle = {
 }
 
 export default function Contact() {
+  const tx = useInterfaceText()
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState(null)
@@ -41,17 +43,15 @@ export default function Contact() {
         <h1 style={{
           fontFamily: "'Cinzel', serif", fontSize: '24px', fontWeight: '600',
           color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px',
-        }}>Contato</h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Fale com a equipe da Apex Security
-        </p>
+        }}>{tx("Contato")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Fale com a equipe da Apex Security")}</p>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
-              <label style={labelStyle}>Nome</label>
+              <label style={labelStyle}>{tx("Nome")}</label>
               <input
                 type="text" value={form.name} onChange={set('name')} required style={fieldStyle}
                 onFocus={e => { e.currentTarget.style.borderColor = '#C9A84C' }}
@@ -59,7 +59,7 @@ export default function Contact() {
               />
             </div>
             <div>
-              <label style={labelStyle}>E-mail</label>
+              <label style={labelStyle}>{tx("E-mail")}</label>
               <input
                 type="email" value={form.email} onChange={set('email')} required style={fieldStyle}
                 onFocus={e => { e.currentTarget.style.borderColor = '#C9A84C' }}
@@ -69,7 +69,7 @@ export default function Contact() {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Assunto</label>
+            <label style={labelStyle}>{tx("Assunto")}</label>
             <input
               type="text" value={form.subject} onChange={set('subject')} required style={fieldStyle}
               onFocus={e => { e.currentTarget.style.borderColor = '#C9A84C' }}
@@ -78,7 +78,7 @@ export default function Contact() {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Mensagem</label>
+            <label style={labelStyle}>{tx("Mensagem")}</label>
             <textarea
               value={form.message} onChange={set('message')} required rows={6}
               style={{ ...fieldStyle, resize: 'vertical' }}
@@ -87,15 +87,15 @@ export default function Contact() {
             />
           </div>
 
-          {result && (
+          {tx(result && (
             <div style={{
               background: result.ok ? 'rgba(26, 107, 60, 0.12)' : 'rgba(192, 57, 43, 0.12)',
               border: `1px solid ${result.ok ? '#1A6B3C' : '#C0392B'}40`,
               borderRadius: '8px', padding: '10px 12px',
               color: result.ok ? '#1A6B3C' : '#C0392B',
               fontFamily: 'Inter', fontSize: '12px', marginBottom: '16px',
-            }}>{result.msg}</div>
-          )}
+            }}>{tx(result.msg)}</div>
+          ))}
 
           <button
             type="submit" disabled={sending}
@@ -107,7 +107,7 @@ export default function Contact() {
               opacity: sending ? 0.5 : 1,
             }}
           >
-            {sending ? 'ENVIANDO...' : 'ENVIAR'}
+            {tx(sending ? 'ENVIANDO...' : 'ENVIAR')}
           </button>
         </form>
       </Card>

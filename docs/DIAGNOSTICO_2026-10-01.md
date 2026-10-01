@@ -41,7 +41,7 @@ Depois do Render publicar v2.2.1, usar Actions → Apex Security Scan → Run wo
 
 O print anterior registra HTTP 404 do Google: gemini-2.5-flash-lite indisponível para novos usuários daquela conta/projeto. O backend converte isso em 502 no Radar. É independente do problema SQLAlchemy e pode afetar Radar, Remediação, Intenção, Risco e SLA.
 
-No Render → Environment, ajustar GEMINI_MODEL para um modelo disponível na conta, conforme a mensagem e a [documentação oficial de gemini-3.5-flash-lite](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite). Salvar, esperar reinício e validar as funcionalidades. O padrão versionado permanece gemini-2.5-flash-lite por regra explícita do AGENTS.md; a variável sobrepõe o padrão.
+Atualização v2.3.0: por solicitação explícita do usuário, o padrão centralizado passou para `gemini-3.8-flash` ([documentação oficial](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)). O usuário confirmou que salvou `GEMINI_MODEL=gemini-3.8-flash` no Render. A variável continua prevalecendo sobre o padrão do código. O erro acima registra o modelo usado no momento do print; validar as funcionalidades após o novo deploy continua necessário para confirmar acesso e cota da conta.
 
 O SDK google-generativeai==0.5.4 é antigo; planejar migração para google-genai com testes. Múltiplas chaves do mesmo projeto não ampliam sua quota; o comentário atual do cliente que afirma quota por chave precisa ser revisto.
 

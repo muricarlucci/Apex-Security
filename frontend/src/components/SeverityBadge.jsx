@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 const config = {
   CRITICAL: { color: '#C0392B', bg: 'rgba(192, 57, 43, 0.15)', label: 'CRÍTICO' },
   HIGH: { color: '#D35400', bg: 'rgba(211, 84, 0, 0.15)', label: 'ALTO' },
@@ -8,6 +9,7 @@ const config = {
 }
 
 export default function SeverityBadge({ severity }) {
+  const tx = useInterfaceText()
   const s = config[severity?.toUpperCase()] || config.UNKNOWN
   return (
     <span style={{
@@ -21,7 +23,7 @@ export default function SeverityBadge({ severity }) {
       fontWeight: '600',
       letterSpacing: '0.08em',
     }}>
-      {s.label}
+      {tx(s.label)}
     </span>
   )
 }

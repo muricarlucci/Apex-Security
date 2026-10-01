@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import ReactFlow, { Background, Controls } from 'reactflow'
 import 'reactflow/dist/style.css'
@@ -64,14 +65,13 @@ const fieldStyle = {
 }
 
 function BlastRadius({ blastRadius }) {
+  const tx = useInterfaceText()
   const rawNodes = blastRadius?.nodes || []
   const rawEdges = blastRadius?.edges || []
 
   if (rawNodes.length === 0) {
     return (
-      <div style={{ color: '#8A7A5A', fontFamily: 'Inter', fontSize: '13px' }}>
-        Sem caminho de propagação mapeado para esta avaliação.
-      </div>
+      <div style={{ color: '#8A7A5A', fontFamily: 'Inter', fontSize: '13px' }}>{tx("Sem caminho de propagação mapeado para esta avaliação.")}</div>
     )
   }
 
@@ -79,7 +79,7 @@ function BlastRadius({ blastRadius }) {
     const c = nodeColors[n.type] || nodeColors.lateral
     return {
       id: String(n.id),
-      data: { label: n.label },
+      data: { label: tx(n.label) },
       position: { x: 40 + i * 210, y: 60 + (i % 2 === 0 ? 0 : 70) },
       style: {
         background: c.bg,
@@ -99,7 +99,7 @@ function BlastRadius({ blastRadius }) {
     id: `e${i}`,
     source: String(e.from),
     target: String(e.to),
-    label: e.label,
+    label: tx(e.label),
     animated: true,
     style: { stroke: '#8B6914' },
     labelStyle: { fill: '#8A7A5A', fontFamily: 'Inter', fontSize: 10 },
@@ -117,6 +117,7 @@ function BlastRadius({ blastRadius }) {
 }
 
 export default function RealRisk() {
+  const tx = useInterfaceText()
   const [profile, setProfile] = useState({
     sector: '',
     annual_revenue: '',
@@ -186,10 +187,8 @@ export default function RealRisk() {
             color: '#F0E6C8',
             letterSpacing: '0.05em',
             marginBottom: '4px',
-          }}>Risco Real</h1>
-          <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-            Quanto uma vulnerabilidade pode custar ao seu negócio
-          </p>
+          }}>{tx("Risco Real")}</h1>
+          <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Quanto uma vulnerabilidade pode custar ao seu negócio")}</p>
         </div>
         <button
           onClick={() => generateRiskReport(assessments, localStorage.getItem('company_name'))}
@@ -211,28 +210,19 @@ export default function RealRisk() {
           }}
           onMouseEnter={e => { if (assessments.length) { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.color = '#C9A84C' } }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2200'; e.currentTarget.style.color = '#8A7A5A' }}
-        >
-          ▤ EXPORTAR PDF
-        </button>
+        >{tx("▤ EXPORTAR PDF")}</button>
       </div>
 
       {/* Cabeçalho explicativo */}
       <Card style={{ marginBottom: '24px', borderLeft: '2px solid #8B6914' }}>
-        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>
-          Estime o impacto financeiro real de cada vulnerabilidade para o seu negócio, com base em
-          multas LGPD, custo de inatividade e a movimentação simulada do ataque pelos seus sistemas.
-          Quanto mais informações você fornecer sobre sua empresa, mais precisa será a estimativa.
-        </p>
+        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>{tx("Estime o impacto financeiro real de cada vulnerabilidade para o seu negócio, com base em multas LGPD, custo de inatividade e a movimentação simulada do ataque pelos seus sistemas. Quanto mais informações você fornecer sobre sua empresa, mais precisa será a estimativa.")}</p>
         <p style={{ fontFamily: 'Inter', fontSize: '12px', color: '#8A7A5A', lineHeight: 1.7, marginTop: '10px' }}>
-          <strong style={{ color: '#E8C97A' }}>Importante:</strong> os valores exibidos são{' '}
-          <strong style={{ color: '#E8C97A' }}>estimativas analíticas de apoio à decisão</strong>,
-          geradas por IA a partir do modelo FAIR e da legislação aplicável — não são números
-          contábeis oficiais nem substituem uma avaliação financeira formal.
-        </p>
+          <strong style={{ color: '#E8C97A' }}>{tx("Importante:")}</strong>{tx(" os valores exibidos são")}{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("estimativas analíticas de apoio à decisão")}</strong>{tx(", geradas por IA a partir do modelo FAIR e da legislação aplicável — não são números contábeis oficiais nem substituem uma avaliação financeira formal.")}</p>
       </Card>
 
-      {loading ? (
-        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>CARREGANDO...</div>
+      {tx(loading ? (
+        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{tx("CARREGANDO...")}</div>
       ) : (
         <>
           {/* Perfil da empresa */}
@@ -240,55 +230,55 @@ export default function RealRisk() {
             <div style={{
               fontFamily: 'Raleway', fontSize: '12px', fontWeight: '600', color: '#8A7A5A',
               letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '20px',
-            }}>Perfil da empresa</div>
+            }}>{tx("Perfil da empresa")}</div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={labelStyle}>Setor de atuação</label>
+                <label style={labelStyle}>{tx("Setor de atuação")}</label>
                 <select value={profile.sector || ''} onChange={set('sector')} style={fieldStyle}>
-                  {sectors.map(s => <option key={s} value={s} style={{ background: '#111111' }}>{s}</option>)}
+                  {sectors.map(s => <option key={s} value={s} style={{ background: '#111111' }}>{tx(s)}</option>)}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Faturamento anual</label>
+                <label style={labelStyle}>{tx("Faturamento anual")}</label>
                 <input
                   type="text"
                   value={profile.annual_revenue || ''}
                   onChange={set('annual_revenue')}
-                  placeholder="R$ 5.000.000,00"
+                  placeholder={tx("R$ 5.000.000,00")}
                   style={fieldStyle}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Volume de dados sensíveis / PII</label>
+                <label style={labelStyle}>{tx("Volume de dados sensíveis / PII")}</label>
                 <select value={profile.sensitive_data_volume || ''} onChange={set('sensitive_data_volume')} style={fieldStyle}>
-                  {dataVolumes.map(v => <option key={v} value={v} style={{ background: '#111111' }}>{v}</option>)}
-                  {profile.sensitive_data_volume && !dataVolumes.includes(profile.sensitive_data_volume) && (
+                  {dataVolumes.map(v => <option key={v} value={v} style={{ background: '#111111' }}>{tx(v)}</option>)}
+                  {tx(profile.sensitive_data_volume && !dataVolumes.includes(profile.sensitive_data_volume) && (
                     <option value={profile.sensitive_data_volume} style={{ background: '#111111' }}>
-                      {profile.sensitive_data_volume}
+                      {tx(profile.sensitive_data_volume)}
                     </option>
-                  )}
+                  ))}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Regulamentações aplicáveis</label>
+                <label style={labelStyle}>{tx("Regulamentações aplicáveis")}</label>
                 <input
                   type="text"
                   value={profile.regulations || ''}
                   onChange={set('regulations')}
-                  placeholder="LGPD"
+                  placeholder={tx("LGPD")}
                   style={fieldStyle}
                 />
               </div>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Contexto operacional adicional</label>
+              <label style={labelStyle}>{tx("Contexto operacional adicional")}</label>
               <textarea
                 value={profile.operational_context || ''}
                 onChange={set('operational_context')}
                 rows={3}
-                placeholder="Ex: processamos pagamentos com cartão, temos 3 mil clientes ativos, banco isolado da internet. Quanto mais detalhes, mais precisa a estimativa."
+                placeholder={tx("Ex: processamos pagamentos com cartão, temos 3 mil clientes ativos, banco isolado da internet. Quanto mais detalhes, mais precisa a estimativa.")}
                 style={{ ...fieldStyle, resize: 'vertical' }}
               />
             </div>
@@ -311,15 +301,15 @@ export default function RealRisk() {
                   opacity: saving ? 0.5 : 1,
                 }}
               >
-                {saving ? 'SALVANDO...' : 'SALVAR PERFIL'}
+                {tx(saving ? 'SALVANDO...' : 'SALVAR PERFIL')}
               </button>
-              {savedMsg && (
+              {tx(savedMsg && (
                 <span style={{
                   fontFamily: 'Inter',
                   fontSize: '12px',
                   color: savedMsg.startsWith('✓') ? '#1A6B3C' : '#C0392B',
-                }}>{savedMsg}</span>
-              )}
+                }}>{tx(savedMsg)}</span>
+              ))}
             </div>
           </Card>
 
@@ -327,14 +317,11 @@ export default function RealRisk() {
           <div style={{
             fontFamily: 'Raleway', fontSize: '12px', fontWeight: '600', color: '#8A7A5A',
             letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '16px',
-          }}>Avaliações de risco geradas</div>
+          }}>{tx("Avaliações de risco geradas")}</div>
 
           {assessments.length === 0 ? (
             <Card>
-              <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>
-                Nenhuma avaliação ainda. Vá para <strong style={{ color: '#C9A84C' }}>Alertas</strong> e
-                clique em "Mapear Risco" em qualquer alerta para gerar a primeira estimativa.
-              </div>
+              <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>{tx("Nenhuma avaliação ainda. Vá para ")}<strong style={{ color: '#C9A84C' }}>{tx("Alertas")}</strong>{tx(" e clique em \"Mapear Risco\" em qualquer alerta para gerar a primeira estimativa.")}</div>
             </Card>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -351,11 +338,11 @@ export default function RealRisk() {
                       fontFamily: 'Raleway',
                       fontWeight: '700',
                       letterSpacing: '0.1em',
-                    }}>ALERTA #{a.alert_id}</span>
+                    }}>{tx("ALERTA #")}{tx(a.alert_id)}</span>
                   </div>
 
                   {/* Impacto financeiro em destaque (so quando o risco foi mapeado) */}
-                  {a.financial_impact_min ? (
+                  {tx(a.financial_impact_min ? (
                     <div style={{
                       background: 'linear-gradient(135deg, #1A1400 0%, #111111 100%)',
                       border: '1px solid #C9A84C40',
@@ -366,7 +353,7 @@ export default function RealRisk() {
                       <div style={{
                         fontFamily: 'Raleway', fontSize: '11px', color: '#8A7A5A',
                         letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '10px',
-                      }}>Impacto financeiro estimado</div>
+                      }}>{tx("Impacto financeiro estimado")}</div>
                       <div style={{
                         fontFamily: "'Cinzel', serif",
                         fontSize: '26px',
@@ -374,7 +361,7 @@ export default function RealRisk() {
                         color: '#E8C97A',
                         lineHeight: 1.3,
                       }}>
-                        {a.financial_impact_min} — {a.financial_impact_max}
+                        {tx(a.financial_impact_min)} — {tx(a.financial_impact_max)}
                       </div>
                     </div>
                   ) : (
@@ -382,27 +369,25 @@ export default function RealRisk() {
                       background: '#0A0A0A', border: '1px solid #2A2200', borderRadius: '8px',
                       padding: '14px 16px', marginBottom: '20px',
                       fontFamily: 'Inter', fontSize: '12px', color: '#8A7A5A',
-                    }}>
-                      Estimativa financeira ainda não gerada — clique em "Mapear Risco" na aba Alertas.
-                    </div>
-                  )}
+                    }}>{tx("Estimativa financeira ainda não gerada — clique em \"Mapear Risco\" na aba Alertas.")}</div>
+                  ))}
 
                   {/* LGPD + downtime */}
-                  {a.financial_impact_min && (
+                  {tx(a.financial_impact_min && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                     <div style={{ background: '#0A0A0A', border: '1px solid #2A2200', borderRadius: '8px', padding: '14px 16px' }}>
-                      <div style={{ fontFamily: 'Raleway', fontSize: '10px', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '6px' }}>Multa LGPD estimada</div>
-                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', color: '#F0E6C8' }}>{a.lgpd_fine_estimate || '—'}</div>
+                      <div style={{ fontFamily: 'Raleway', fontSize: '10px', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '6px' }}>{tx("Multa LGPD estimada")}</div>
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', color: '#F0E6C8' }}>{tx(a.lgpd_fine_estimate || '—')}</div>
                     </div>
                     <div style={{ background: '#0A0A0A', border: '1px solid #2A2200', borderRadius: '8px', padding: '14px 16px' }}>
-                      <div style={{ fontFamily: 'Raleway', fontSize: '10px', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '6px' }}>Custo de inatividade</div>
-                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', color: '#F0E6C8' }}>{a.downtime_cost_estimate || '—'}</div>
+                      <div style={{ fontFamily: 'Raleway', fontSize: '10px', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '6px' }}>{tx("Custo de inatividade")}</div>
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', color: '#F0E6C8' }}>{tx(a.downtime_cost_estimate || '—')}</div>
                     </div>
                   </div>
-                  )}
+                  ))}
 
                   {/* SLA de Compliance — só aparece depois de calculado */}
-                  {a.sla_deadline && (
+                  {tx(a.sla_deadline && (
                     <div style={{
                       background: '#0A0A0A',
                       border: `1px solid ${(complianceColors[a.compliance_risk_level] || '#2A2200')}40`,
@@ -414,8 +399,8 @@ export default function RealRisk() {
                         <div style={{
                           fontFamily: 'Raleway', fontSize: '10px', color: '#8A7A5A',
                           letterSpacing: '0.15em', textTransform: 'uppercase',
-                        }}>Prazo de correção (SLA)</div>
-                        {a.compliance_risk_level && (
+                        }}>{tx("Prazo de correção (SLA)")}</div>
+                        {tx(a.compliance_risk_level && (
                           <span style={{
                             background: `${complianceColors[a.compliance_risk_level] || '#8A7A5A'}20`,
                             color: complianceColors[a.compliance_risk_level] || '#8A7A5A',
@@ -426,8 +411,8 @@ export default function RealRisk() {
                             fontFamily: 'Raleway',
                             fontWeight: '700',
                             letterSpacing: '0.1em',
-                          }}>RISCO DE COMPLIANCE: {a.compliance_risk_level}</span>
-                        )}
+                          }}>{tx("RISCO DE COMPLIANCE: ")}{tx(a.compliance_risk_level)}</span>
+                        ))}
                       </div>
                       <div style={{
                         fontFamily: "'Cinzel', serif",
@@ -435,49 +420,45 @@ export default function RealRisk() {
                         fontWeight: '700',
                         color: '#E8C97A',
                         marginBottom: '10px',
-                      }}>{a.sla_deadline}</div>
-                      {a.sla_reasoning && (
+                      }}>{tx(a.sla_deadline)}</div>
+                      {tx(a.sla_reasoning && (
                         <p style={{ fontFamily: 'Inter', fontSize: '12px', color: '#8A7A5A', lineHeight: 1.7 }}>
-                          {a.sla_reasoning}
+                          {isDemoMode ? tx(a.sla_reasoning) : a.sla_reasoning}
                         </p>
-                      )}
+                      ))}
                     </div>
-                  )}
+                  ))}
 
                   {/* Raciocínio FAIR */}
-                  {a.fair_reasoning && (
+                  {tx(a.fair_reasoning && (
                     <div style={{ marginBottom: '20px' }}>
-                      <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                        Raciocínio da estimativa (FAIR)
-                      </div>
+                      <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>{tx("Raciocínio da estimativa (FAIR)")}</div>
                       <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>
-                        {a.fair_reasoning}
+                        {isDemoMode ? tx(a.fair_reasoning) : a.fair_reasoning}
                       </p>
                     </div>
-                  )}
+                  ))}
 
                   {/* Blast radius */}
-                  {a.blast_radius?.nodes?.length > 0 && (
+                  {tx(a.blast_radius?.nodes?.length > 0 && (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                        Blast radius — propagação simulada
-                      </div>
+                      <div style={{ fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{tx("Blast radius — propagação simulada")}</div>
                       <div style={{ display: 'flex', gap: '14px', fontFamily: 'Raleway', fontSize: '10px' }}>
-                        <span style={{ color: '#C0392B' }}>● ponto de entrada</span>
-                        <span style={{ color: '#8A7A5A' }}>● movimento lateral</span>
-                        <span style={{ color: '#E8C97A' }}>● ativo crítico</span>
+                        <span style={{ color: '#C0392B' }}>{tx("● ponto de entrada")}</span>
+                        <span style={{ color: '#8A7A5A' }}>{tx("● movimento lateral")}</span>
+                        <span style={{ color: '#E8C97A' }}>{tx("● ativo crítico")}</span>
                       </div>
                     </div>
                     <BlastRadius blastRadius={a.blast_radius} />
                   </div>
-                  )}
+                  ))}
                 </Card>
               ))}
             </div>
           )}
         </>
-      )}
+      ))}
     </div>
   )
 }

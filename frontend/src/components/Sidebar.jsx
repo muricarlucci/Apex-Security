@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { languages } from '../i18n'
+import { translateInterface as tx } from '../utils/interfaceText'
 
 const menuItems = [
   { path: '/integration-key', key: 'integrationKey', icon: '⚿' },
@@ -177,7 +178,7 @@ export default function Sidebar({ open, onClose }) {
                   color: isCurrent ? '#C9A84C' : '#8A7A5A',
                   fontWeight: isCurrent ? '600' : '400',
                   flex: 1,
-                }}>{lang.label}</span>
+                }}>{tx(lang.label)}</span>
                 {isCurrent && <span style={{ color: '#C9A84C', fontSize: '11px' }}>✓</span>}
               </button>
             )

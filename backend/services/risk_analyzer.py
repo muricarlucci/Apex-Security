@@ -1,4 +1,4 @@
-import os
+from services.model_config import get_model_name
 import json
 from dotenv import load_dotenv
 from services.gemini_client import generate_with_fallback
@@ -9,7 +9,7 @@ load_dotenv()
 # Segue a mesma filosofia consultiva dos demais modulos avancados: informa,
 # nao substitui a priorizacao deterministica nem a governanca human-in-the-loop.
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+GEMINI_MODEL = get_model_name()
 
 RISK_SYSTEM_PROMPT = """Voce e um analista de risco cibernetico especializado em quantificacao
 financeira de vulnerabilidades, seguindo principios do modelo FAIR (Factor Analysis of

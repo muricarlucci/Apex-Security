@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -28,6 +29,7 @@ const labelStyle = {
 }
 
 export default function Login() {
+  const tx = useInterfaceText()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -115,7 +117,7 @@ export default function Login() {
             />
           </div>
 
-          {error && (
+          {tx(error && (
             <div style={{
               background: 'rgba(192, 57, 43, 0.12)',
               border: '1px solid #C0392B40',
@@ -125,8 +127,8 @@ export default function Login() {
               fontFamily: 'Inter',
               fontSize: '12px',
               marginBottom: '16px',
-            }}>{error}</div>
-          )}
+            }}>{tx(error)}</div>
+          ))}
 
           <button
             type="submit"
@@ -146,7 +148,7 @@ export default function Login() {
               opacity: loading ? 0.5 : 1,
             }}
           >
-            {loading ? t('auth.loggingIn') : t('auth.loginButton')}
+            {tx(loading ? t('auth.loggingIn') : t('auth.loginButton'))}
           </button>
         </form>
 

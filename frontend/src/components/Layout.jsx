@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +19,7 @@ const navItems = [
 ]
 
 export default function Layout({ children }) {
+  const tx = useInterfaceText()
   const navigate = useNavigate()
   const location = useLocation()
   const companyName = localStorage.getItem('company_name')
@@ -86,7 +88,7 @@ export default function Layout({ children }) {
               transition: 'all 0.2s ease',
             }}
           >
-            {t('nav.demoMode')}: {isDemoMode ? t('nav.on') : t('nav.off')}
+            {t('nav.demoMode')}: {tx(isDemoMode ? t('nav.on') : t('nav.off'))}
           </button>
         </div>
 
@@ -97,7 +99,7 @@ export default function Layout({ children }) {
             const isFirstAdvanced = item.advanced && !navItems[idx - 1]?.advanced
             return (
               <span key={item.path} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {isFirstAdvanced && (
+                {tx(isFirstAdvanced && (
                   <span style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -114,7 +116,7 @@ export default function Layout({ children }) {
                       whiteSpace: 'nowrap',
                     }}>{t('nav.advanced')}</span>
                   </span>
-                )}
+                ))}
               <button
                 onClick={() => navigate(item.path)}
                 style={{
@@ -146,7 +148,7 @@ export default function Layout({ children }) {
                   }
                 }}
               >
-                <span style={{ fontSize: '12px', opacity: 0.7 }}>{item.icon}</span>
+                <span style={{ fontSize: '12px', opacity: 0.7 }}>{tx(item.icon)}</span>
                 {t(`nav.${item.key}`)}
               </button>
               </span>
@@ -169,7 +171,7 @@ export default function Layout({ children }) {
               fontSize: '11px',
               color: '#8A7A5A',
               letterSpacing: '0.1em',
-            }}>{companyName || 'SISTEMA ATIVO'}</span>
+            }}>{companyName || tx('SISTEMA ATIVO')}</span>
           </div>
         </div>
 

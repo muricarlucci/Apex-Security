@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
@@ -17,6 +18,7 @@ const severityColors = {
 }
 
 export default function Dashboard() {
+  const tx = useInterfaceText()
   const [stats, setStats] = useState(null)
   const [recentAlerts, setRecentAlerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -128,6 +130,7 @@ export default function Dashboard() {
             <BarChart data={chartData} barSize={32}>
               <XAxis
                 dataKey="name"
+                tickFormatter={tx}
                 tick={{ fill: '#8A7A5A', fontSize: 11, fontFamily: 'Raleway' }}
                 axisLine={false}
                 tickLine={false}
@@ -139,6 +142,8 @@ export default function Dashboard() {
                 allowDecimals={false}
               />
               <Tooltip
+                labelFormatter={tx}
+                formatter={(value, name) => [value, tx(name)]}
                 cursor={{ fill: 'rgba(201, 168, 76, 0.06)' }}
                 contentStyle={{
                   background: '#111111',
@@ -172,7 +177,7 @@ export default function Dashboard() {
             marginBottom: '20px',
           }}>{t('dashboard.recentAlerts')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {recentAlerts.length === 0 ? (
+            {tx(recentAlerts.length === 0 ? (
               <div style={{ color: '#8A7A5A', fontSize: '13px' }}>{t('dashboard.noAlerts')}</div>
             ) : recentAlerts.map(alert => (
               <div
@@ -213,7 +218,7 @@ export default function Dashboard() {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                  }}>{alert.title}</div>
+                }}>{isDemoMode ? tx(alert.title) : alert.title}</div>
                   <div style={{
                     fontSize: '11px',
                     color: '#8A7A5A',
@@ -227,9 +232,9 @@ export default function Dashboard() {
                   fontWeight: '600',
                   letterSpacing: '0.08em',
                   flexShrink: 0,
-                }}>{alert.severity_adjusted}</div>
+                }}>{tx(alert.severity_adjusted)}</div>
               </div>
-            ))}
+            )))}
           </div>
         </Card>
       </div>

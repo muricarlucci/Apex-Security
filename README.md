@@ -1,4 +1,4 @@
-# Apex Security v2.2.1
+# Apex Security v2.3.0
 
 Plataforma ASPM (Application Security Posture Management), projeto acadêmico de Cibersegurança da FIAP. A Apex Security automatiza detecção, priorização e proposta de correção de vulnerabilidades. Pessoas revisam e decidem o merge de cada Pull Request.
 
@@ -9,7 +9,7 @@ Plataforma ASPM (Application Security Posture Management), projeto acadêmico de
 - [Site de apresentação](https://apex-security-site-apresentacao.vercel.app)
 - [Repositório do dashboard e backend](https://github.com/muricarlucci/Apex-Security)
 
-Versão atual: **v2.2.1**. Consulte o [histórico de mudanças](CHANGELOG.md).
+Versão atual: **v2.3.0**. Consulte o [histórico de mudanças](CHANGELOG.md).
 
 O backend no plano gratuito do Render dorme após 15 minutos sem uso; a primeira resposta pode levar 30 a 50 segundos. O banco usa Neon. Acorde a API antes de uma apresentação.
 
@@ -35,7 +35,7 @@ Um push aciona o workflow do repositório do cliente. Semgrep e Trivy rodam na C
 
 A numeração aparece na documentação, nunca na interface. Estimativas de risco e SLA, anomalias, intenção e Radar são apoio à decisão; não são conclusões definitivas.
 
-Recursos adicionais: sidebar de Chave de Integração, Conta, Contato, Notificações e Idioma; fallback entre chaves Gemini; contato via Resend; webhook do Discord; Modo Demo; relatórios PDF; Security Health Score; data e hora dos alertas; sete idiomas com cobertura parcial. Chinês, hindi e japonês ainda precisam de revisão nativa.
+Recursos adicionais: sidebar de Chave de Integração, Conta, Contato, Notificações e Idioma; fallback entre chaves Gemini; contato via Resend; webhook do Discord; Modo Demo; relatórios PDF; Security Health Score; data e hora dos alertas; interface em português, inglês, espanhol, chinês, hindi, francês e japonês. A escolha muda também mensagens, gráficos, datas e relatórios. Português mantém os textos originais. Dados inseridos pelo usuário, código, identificadores e análises reais da IA são preservados no idioma original; a troca de idioma não reescreve esses conteúdos.
 
 ## Infraestrutura
 
@@ -90,7 +90,7 @@ O dashboard local fica em `http://localhost:5173`. `frontend/.env.example` mostr
 | `DATABASE_URL` | PostgreSQL do Neon ou banco local |
 | `GEMINI_API_KEY` | Chave principal do Gemini |
 | `GEMINI_API_KEY_2` | Chave opcional de fallback |
-| `GEMINI_MODEL` | Modelo; padrão `gemini-2.5-flash-lite` |
+| `GEMINI_MODEL` | Modelo; padrão `gemini-3.8-flash` |
 | `GITHUB_TOKEN` | PAT para criar branches, commits e PRs |
 | `GITHUB_REPO` | Repositório alvo; padrão `muricarlucci/Apex-Security` |
 | `JWT_SECRET_KEY` | Assinatura dos JWTs |

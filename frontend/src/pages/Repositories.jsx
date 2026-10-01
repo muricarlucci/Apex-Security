@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import Card from '../components/Card'
 import { getAlerts } from '../services/api'
@@ -14,6 +15,7 @@ const severityColors = {
 }
 
 export default function Repositories() {
+  const tx = useInterfaceText()
   const [repos, setRepos] = useState([])
   const [loading, setLoading] = useState(true)
   const { isDemoMode } = useDemoMode()
@@ -48,21 +50,15 @@ export default function Repositories() {
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px' }}>
-          Repositórios
-        </h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Inventário de ativos monitorados e alertas por severidade
-        </p>
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px' }}>{tx("Repositórios")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Inventário de ativos monitorados e alertas por severidade")}</p>
       </div>
 
-      {loading ? (
-        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>CARREGANDO...</div>
+      {tx(loading ? (
+        <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{tx("CARREGANDO...")}</div>
       ) : repos.length === 0 ? (
         <Card>
-          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>
-            Nenhum repositório com alertas ainda.
-          </div>
+          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>{tx("Nenhum repositório com alertas ainda.")}</div>
         </Card>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
@@ -76,7 +72,7 @@ export default function Repositories() {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                }}>{repo.name}</div>
+                }}>{repo.name === 'desconhecido' ? tx('desconhecido') : repo.name}</div>
                 <div style={{
                   fontFamily: "'Cinzel', serif",
                   fontSize: '20px',
@@ -84,7 +80,7 @@ export default function Repositories() {
                   color: '#C9A84C',
                   flexShrink: 0,
                   marginLeft: '12px',
-                }}>{repo.total}</div>
+                }}>{tx(repo.total)}</div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {Object.entries(repo.severities).map(([sev, count]) => (
@@ -98,13 +94,13 @@ export default function Repositories() {
                     fontFamily: 'Raleway',
                     fontWeight: '600',
                     letterSpacing: '0.06em',
-                  }}>{sev} {count}</span>
+                  }}>{tx(sev)} {tx(count)}</span>
                 ))}
               </div>
             </Card>
           ))}
         </div>
-      )}
+      ))}
     </div>
   )
 }

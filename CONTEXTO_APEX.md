@@ -1,6 +1,6 @@
 # CONTEXTO_APEX — memória viva do dashboard e backend
 
-Última atualização: **2026-10-01**. Versão atual: **v2.2.1**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+Última atualização: **2026-10-01**. Versão atual: **v2.3.0**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
 
 ## Estado e transição
 
@@ -45,7 +45,9 @@ A numeração aparece em README e CONTEXTO, nunca na UI. Anomalias não substitu
 
 A versão 2.0 adicionou sidebar com Chave de Integração, Conta, Contato e Notificações; fallback entre `GEMINI_API_KEY`, `GEMINI_API_KEY_2` e outras chaves em `services/gemini_client.py`; notificações por webhook do Discord; Modo Demo com dados fictícios; PDF de Alertas e Risco Real via jsPDF; Security Health Score; timestamps nos alertas. Fórmula do score: `100 - 25×críticos - 10×altos - 5×médios`, limitado ao intervalo apropriado; A ≥ 90, B 70–89, F < 70.
 
-A versão 2.1 migrou o contato para a API HTTPS do Resend e adicionou sete idiomas via react-i18next: pt (padrão), en, es, zh, hi, fr, ja. A cobertura ainda é parcial. As traduções zh/hi/ja precisam de revisão nativa. Não fixe `lng: 'pt'` no `i18n.js`, pois isso anula a preferência salva. O envio de contato usa `RESEND_API_KEY`, `CONTACT_EMAIL_TO` e `RESEND_FROM_ADDRESS`.
+A versão 2.1 migrou o contato para a API HTTPS do Resend e adicionou sete idiomas via react-i18next: pt (padrão), en, es, zh, hi, fr, ja. A versão 2.3 completa as traduções da interface com catálogos adicionais `interface.*.json`, mantendo os arquivos originais de tradução e os textos em português intactos. Mensagens de ações já exibidas reagem à troca de idioma. Datas, filtros visuais, gráficos e PDF seguem a seleção; valores enviados à API, código e dados reais permanecem originais. Conteúdos narrativos reais da IA não são traduzidos automaticamente. Não fixe `lng: 'pt'` no `i18n.js`, pois isso anula a preferência salva. O envio de contato usa `RESEND_API_KEY`, `CONTACT_EMAIL_TO` e `RESEND_FROM_ADDRESS`.
+
+Validação v2.3.0: 88 testes do backend, consistência de 331 mensagens nos sete idiomas, 105 combinações de rota/idioma no navegador, português equivalente ao commit `796987e`, persistência da seleção, mensagens reativas, payloads e código preservados, Demo offline, 14 PDFs e build de produção. A suíte de navegador usa Playwright com APIs simuladas e bundles em memória, sem servidor. Nenhuma chamada real ao Gemini foi feita pelos testes. PDFs zh/hi/ja usam imagem do texto renderizado pelo navegador, evitando perda de caracteres; o texto desses PDFs não é pesquisável.
 
 ## Código, banco e autenticação
 
@@ -60,7 +62,7 @@ Desde v2.2.1, o engine usa `pool_pre_ping=True`, `pool_recycle=300` e `hide_para
 ## Regras permanentes
 
 - Python 3.11.x; não usar emojis em arquivos Python por causa do console Windows cp1252.
-- Modelo padrão `gemini-2.5-flash-lite`, configurável por `GEMINI_MODEL`. Variantes antigas mencionadas no histórico foram descontinuadas ou não têm cota nesta conta.
+- Modelo padrão centralizado `gemini-3.8-flash`, configurável por `GEMINI_MODEL`. O usuário confirmou a alteração dessa variável no Render em 2026-10-01. Remediação, Intenção, Radar, Risco Real e SLA usam a mesma configuração; não houve mudança de SDK nem de prompts.
 - SQLAlchemy como ORM. Não alterar esquema de forma destrutiva nem introduzir migrações novas sem combinar.
 - Nunca versionar `.env`, senhas, tokens ou chaves; nunca embutir token na URL do Git.
 - Preservar a identidade visual preto `#0A0A0A`, dourado `#C9A84C` e fontes Cinzel, Raleway, Inter e JetBrains Mono; tokens em `frontend/src/theme.js`.
@@ -90,5 +92,6 @@ Auditoria de 2026-10-01: `pip check` não encontrou dependências incompatíveis
 - v2.2.0 (2026-10-01): transição de responsável e infraestrutura, CORS do site, limpeza de referências antigas e documentação reescrita.
 
 - v2.2.1 (2026-10-01): recuperação do pool, ingestão atômica, tratamento explícito de erros e diagnóstico operacional.
+- v2.3.0 (2026-10-01): Gemini 3.8 Flash e cobertura da interface nos sete idiomas, preservando português e contratos de API.
 
 A próxima sessão deve começar por este arquivo, README e CHANGELOG, confirmar o estado real do código e da produção e registrar divergências antes de novas mudanças.

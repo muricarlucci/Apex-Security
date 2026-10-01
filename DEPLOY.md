@@ -1,4 +1,4 @@
-# Deploy da Apex Security v2.2.1
+# Deploy da Apex Security v2.3.0
 
 Este guia documenta o dashboard/backend no repositório [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security). O site de apresentação fica em outro repositório. URLs atuais: [API](https://apex-security-xzk4.onrender.com/docs), [dashboard](https://apex-security-kappa.vercel.app) e [site](https://apex-security-site-apresentacao.vercel.app). Render, Neon e Vercel usam planos gratuitos; confirme os limites atuais nos respectivos painéis.
 
@@ -26,7 +26,7 @@ O [`render.yaml`](render.yaml) também descreve o serviço. Preencha as variáve
 | `DATABASE_URL` | Connection string do Neon, com SSL |
 | `GEMINI_API_KEY` | Chave principal regenerada |
 | `GEMINI_API_KEY_2` | Chave opcional de fallback |
-| `GEMINI_MODEL` | `gemini-2.5-flash-lite`, configurável |
+| `GEMINI_MODEL` | `gemini-3.8-flash`, configurável |
 | `GITHUB_TOKEN` | PAT da conta atual, usado para criar PRs |
 | `GITHUB_REPO` | `muricarlucci/Apex-Security` |
 | `JWT_SECRET_KEY` | Segredo forte; `render.yaml` usa `generateValue: true` |
@@ -89,4 +89,4 @@ Para testes locais sem iniciar o servidor, execute `pytest tests/ -v` a partir d
 
 Veja [o relatório de 2026-10-01](docs/DIAGNOSTICO_2026-10-01.md). O pool usa pre-ping e reciclagem de 300 segundos. Isso não recupera uma transação já interrompida: `/api/scan` retorna 503 e não confirma sucesso. Falhas de constraints ou SQL retornam 500. Após falha durante o commit, confira o que foi persistido antes de reenviar, pois a resposta perdida pode ter ocorrido depois do commit.
 
-O Radar ainda exige ajustar `GEMINI_MODEL` no painel do Render para um modelo disponível na conta atual (o print indica `gemini-3.5-flash-lite`). O padrão versionado de `gemini-2.5-flash-lite` permanece conforme a regra atual do AGENTS.md; uma variável do Render sobrepõe esse padrão para todos os serviços de IA. Salve, espere o reinício e teste Radar, Remediar, Intenção, Risco Real e SLA.
+Todos os serviços de IA usam o padrão centralizado `gemini-3.8-flash`. No Render, defina `GEMINI_MODEL=gemini-3.8-flash`; uma variável de ambiente antiga sobrepõe o padrão do código. Salve, espere o reinício e valide Radar, Remediar, Intenção, Risco Real e SLA.

@@ -1,4 +1,4 @@
-import os
+from services.model_config import get_model_name
 from dotenv import load_dotenv
 from services.gemini_client import generate_with_fallback
 
@@ -8,7 +8,7 @@ load_dotenv()
 # ao vivo na internet. O relatorio e uma sintese do conhecimento ja presente no
 # modelo — a interface deixa isso explicito para nao prometer "tempo real".
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+GEMINI_MODEL = get_model_name()
 
 RADAR_SYSTEM_PROMPT = """Voce e um analista de threat intelligence senior. Com base no seu
 conhecimento sobre tendencias de ciberseguranca, gere um panorama executivo para uma empresa

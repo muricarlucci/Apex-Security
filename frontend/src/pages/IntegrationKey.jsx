@@ -1,8 +1,10 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import Card from '../components/Card'
 import { getMe, regenerateApiKey } from '../services/api'
 
 export default function IntegrationKey() {
+  const tx = useInterfaceText()
   const [apiKey, setApiKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -41,20 +43,18 @@ export default function IntegrationKey() {
         <h1 style={{
           fontFamily: "'Cinzel', serif", fontSize: '24px', fontWeight: '600',
           color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px',
-        }}>Chave de Integração</h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Conecte seus repositórios do GitHub à plataforma
-        </p>
+        }}>{tx("Chave de Integração")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Conecte seus repositórios do GitHub à plataforma")}</p>
       </div>
 
       <Card style={{ marginBottom: '24px' }}>
         <div style={{
           fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A',
           letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px',
-        }}>Sua chave</div>
+        }}>{tx("Sua chave")}</div>
 
-        {loading ? (
-          <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>CARREGANDO...</div>
+        {tx(loading ? (
+          <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{tx("CARREGANDO...")}</div>
         ) : (
           <>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
@@ -81,41 +81,32 @@ export default function IntegrationKey() {
                   letterSpacing: '0.08em', cursor: 'pointer', whiteSpace: 'nowrap',
                 }}
               >
-                {copied ? '✓ COPIADO' : 'COPIAR'}
+                {tx(copied ? '✓ COPIADO' : 'COPIAR')}
               </button>
             </div>
           </>
-        )}
+        ))}
       </Card>
 
       <Card style={{ marginBottom: '24px' }}>
         <div style={{
           fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A',
           letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px',
-        }}>Como usar</div>
-        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.8 }}>
-          Adicione esta chave como o secret{' '}
-          <code style={{ fontFamily: "'JetBrains Mono', monospace", color: '#C9A84C' }}>APEX_USER_API_KEY</code>{' '}
-          nas configurações do seu repositório no GitHub
-          (<strong style={{ color: '#E8C97A' }}>Settings → Secrets and variables → Actions</strong>).
-          A partir daí, cada push executa os scanners e os alertas aparecem automaticamente
-          nesta conta — e somente nela.
-        </p>
+        }}>{tx("Como usar")}</div>
+        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.8 }}>{tx("Adicione esta chave como o secret")}{tx(' ')}
+          <code style={{ fontFamily: "'JetBrains Mono', monospace", color: '#C9A84C' }}>APEX_USER_API_KEY</code>{tx(' ')}{tx("nas configurações do seu repositório no GitHub (")}<strong style={{ color: '#E8C97A' }}>{tx("Settings → Secrets and variables → Actions")}</strong>{tx("). A partir daí, cada push executa os scanners e os alertas aparecem automaticamente nesta conta — e somente nela.")}</p>
       </Card>
 
       <Card>
         <div style={{
           fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A',
           letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px',
-        }}>Gerar nova chave</div>
+        }}>{tx("Gerar nova chave")}</div>
         <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#8A7A5A', lineHeight: 1.7, marginBottom: '16px' }}>
-          <strong style={{ color: '#D35400' }}>Atenção:</strong> gerar uma nova chave{' '}
-          <strong style={{ color: '#F0E6C8' }}>invalida a anterior imediatamente</strong>. Os
-          repositórios que usam a chave antiga param de enviar dados até que você atualize o
-          secret no GitHub.
-        </p>
+          <strong style={{ color: '#D35400' }}>{tx("Atenção:")}</strong>{tx(" gerar uma nova chave")}{tx(' ')}
+          <strong style={{ color: '#F0E6C8' }}>{tx("invalida a anterior imediatamente")}</strong>{tx(". Os repositórios que usam a chave antiga param de enviar dados até que você atualize o secret no GitHub.")}</p>
 
-        {!confirmRegen ? (
+        {tx(!confirmRegen ? (
           <button
             onClick={() => setConfirmRegen(true)}
             style={{
@@ -123,9 +114,7 @@ export default function IntegrationKey() {
               padding: '10px 24px', color: '#D35400', fontFamily: 'Raleway',
               fontSize: '12px', fontWeight: '600', letterSpacing: '0.08em', cursor: 'pointer',
             }}
-          >
-            GERAR NOVA CHAVE
-          </button>
+          >{tx("GERAR NOVA CHAVE")}</button>
         ) : (
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button
@@ -138,7 +127,7 @@ export default function IntegrationKey() {
                 cursor: 'pointer', opacity: regenerating ? 0.5 : 1,
               }}
             >
-              {regenerating ? 'GERANDO...' : 'CONFIRMAR — INVALIDAR A ANTIGA'}
+              {tx(regenerating ? 'GERANDO...' : 'CONFIRMAR — INVALIDAR A ANTIGA')}
             </button>
             <button
               onClick={() => setConfirmRegen(false)}
@@ -147,11 +136,9 @@ export default function IntegrationKey() {
                 padding: '10px 20px', color: '#8A7A5A', fontFamily: 'Raleway',
                 fontSize: '12px', fontWeight: '600', letterSpacing: '0.08em', cursor: 'pointer',
               }}
-            >
-              CANCELAR
-            </button>
+            >{tx("CANCELAR")}</button>
           </div>
-        )}
+        ))}
       </Card>
     </div>
   )

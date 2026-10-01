@@ -1,3 +1,4 @@
+import { useInterfaceText } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import Card from '../components/Card'
 import { getMe, saveDiscordWebhook, testDiscordWebhook } from '../services/api'
@@ -15,6 +16,7 @@ const fieldStyle = {
 }
 
 export default function Notifications() {
+  const tx = useInterfaceText()
   const [webhookUrl, setWebhookUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -60,26 +62,22 @@ export default function Notifications() {
         <h1 style={{
           fontFamily: "'Cinzel', serif", fontSize: '24px', fontWeight: '600',
           color: '#F0E6C8', letterSpacing: '0.05em', marginBottom: '4px',
-        }}>Notificações</h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Receba alertas novos direto no seu canal do Discord
-        </p>
+        }}>{tx("Notificações")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Receba alertas novos direto no seu canal do Discord")}</p>
       </div>
 
       <Card style={{ marginBottom: '24px', borderLeft: '2px solid #8B6914' }}>
-        <div style={{ ...labelStyle, marginBottom: '10px' }}>Como obter a URL do webhook</div>
-        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.8 }}>
-          No Discord, abra as <strong style={{ color: '#E8C97A' }}>Configurações do Canal</strong> →{' '}
-          <strong style={{ color: '#E8C97A' }}>Integrações</strong> →{' '}
-          <strong style={{ color: '#E8C97A' }}>Webhooks</strong> →{' '}
-          <strong style={{ color: '#E8C97A' }}>Criar Webhook</strong> → copie a URL gerada e cole abaixo.
-        </p>
+        <div style={{ ...labelStyle, marginBottom: '10px' }}>{tx("Como obter a URL do webhook")}</div>
+        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.8 }}>{tx("No Discord, abra as ")}<strong style={{ color: '#E8C97A' }}>{tx("Configurações do Canal")}</strong> →{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("Integrações")}</strong> →{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("Webhooks")}</strong> →{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("Criar Webhook")}</strong>{tx(" → copie a URL gerada e cole abaixo.")}</p>
       </Card>
 
       <Card>
-        <label style={labelStyle}>URL do webhook</label>
-        {loading ? (
-          <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>CARREGANDO...</div>
+        <label style={labelStyle}>{tx("URL do webhook")}</label>
+        {tx(loading ? (
+          <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{tx("CARREGANDO...")}</div>
         ) : (
           <>
             <input
@@ -99,7 +97,7 @@ export default function Notifications() {
                 borderRadius: '8px', padding: '10px 12px',
                 color: result.ok ? '#1A6B3C' : '#C0392B',
                 fontFamily: 'Inter', fontSize: '12px', marginBottom: '16px',
-              }}>{result.msg}</div>
+              }}>{tx(result.msg)}</div>
             )}
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -114,7 +112,7 @@ export default function Notifications() {
                   opacity: (saving || !webhookUrl.trim()) ? 0.5 : 1,
                 }}
               >
-                {saving ? 'SALVANDO...' : 'SALVAR'}
+                {tx(saving ? 'SALVANDO...' : 'SALVAR')}
               </button>
               <button
                 onClick={handleTest}
@@ -127,11 +125,11 @@ export default function Notifications() {
                   opacity: (testing || !webhookUrl.trim()) ? 0.5 : 1,
                 }}
               >
-                {testing ? 'ENVIANDO...' : 'TESTAR NOTIFICAÇÃO'}
+                {tx(testing ? 'ENVIANDO...' : 'TESTAR NOTIFICAÇÃO')}
               </button>
             </div>
           </>
-        )}
+        ))}
       </Card>
     </div>
   )

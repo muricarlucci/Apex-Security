@@ -1,5 +1,24 @@
 # Changelog — Apex Security
 
+## v2.3.0 — 2026-10-01
+
+### Corrigido
+
+- Padrão de IA centralizado em `gemini-3.8-flash` para Remediação, Intenção, Radar, Risco Real e SLA; `GEMINI_MODEL` continua configurável e valores vazios usam o padrão.
+- Ambiente de exemplo, blueprint Render e documentação alinhados ao modelo solicitado. Usuário confirmou a variável no Render.
+- Textos fixos de todas as 15 telas, mensagens após ações, placeholders, filtros, severidades, gráficos, datas e relatórios seguem o idioma escolhido.
+- Preferência de idioma persiste no navegador; português permanece padrão e mantém os textos originais.
+- Narrativas de demonstração são traduzidas na apresentação; código, identificadores, valores de API, dados reais e análises já geradas mantêm sua forma original.
+- PDF em chinês, hindi e japonês usa renderização do navegador para preservar caracteres e composição de texto. Nesses três idiomas, o texto do PDF é rasterizado; nos demais, permanece a exportação com fontes Latin do jsPDF.
+
+### Verificado
+
+- 88 testes de backend passaram, sem chamadas reais a Gemini, GitHub ou Resend.
+- Catálogos dos sete idiomas com 331 mensagens, chaves e parâmetros de interpolação consistentes; português original preservado.
+- 105 combinações de rota/idioma no navegador, comparação de português com o commit anterior, troca real na sidebar, persistência, mensagens já exibidas, código e payloads preservados, Demo sem API e 14 exportações PDF.
+- Build de produção concluído. Testes de navegador usam bundles em memória e APIs simuladas, sem iniciar servidor.
+- Alterações limitadas ao modelo, idiomas, testes e documentação de versão; banco, pipeline e contratos da API preservados. Acesso e cota do Gemini em produção ainda exigem validação com a conta.
+
 ## v2.2.1 — 2026-10-01
 
 ### Corrigido

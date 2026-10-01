@@ -1,4 +1,4 @@
-import os
+from services.model_config import get_model_name
 import json
 import re
 from dotenv import load_dotenv
@@ -7,12 +7,8 @@ from services.gemini_client import generate_with_fallback
 
 load_dotenv()
 
-# O prompt da R4 fixou "gemini-1.5-flash", mas esse modelo foi descontinuado (a API
-# retorna 404 para generateContent na v1beta). Além disso, esta chave tem cota ZERO
-# (free tier limit: 0) para gemini-2.0-flash. O modelo flash estável, barato e que
-# tem cota nesta conta é gemini-2.5-flash-lite — mantém a decisão "flash, não pro/ultra".
-# Configurável via GEMINI_MODEL no .env caso o grupo precise trocar de novo.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+# Modelo centralizado, configuravel por GEMINI_MODEL.
+GEMINI_MODEL = get_model_name()
 
 SYSTEM_PROMPT = """Voce e um especialista em seguranca de software da plataforma Apex Security.
 Sua tarefa e analisar vulnerabilidades de codigo e gerar correcoes seguras.

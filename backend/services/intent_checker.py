@@ -1,4 +1,4 @@
-import os
+from services.model_config import get_model_name
 import json
 from dotenv import load_dotenv
 from services.gemini_client import generate_with_fallback
@@ -10,7 +10,7 @@ load_dotenv()
 # mensagem de commit com o diff real via LLM. O resultado e um alerta
 # INFORMATIVO: nunca bloqueia PRs ou merges automaticamente.
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+GEMINI_MODEL = get_model_name()
 
 INTENT_SYSTEM_PROMPT = """Voce e um auditor de consistencia entre intencao declarada e codigo real.
 Compare a mensagem de commit fornecida com o diff de codigo fornecido.

@@ -1,3 +1,4 @@
+import { useInterfaceText, getInterfaceLocale } from '../utils/interfaceText'
 import { useState } from 'react'
 import Card from '../components/Card'
 import { getRadar } from '../services/api'
@@ -5,6 +6,7 @@ import { useDemoMode, demoDelay } from '../context/DemoContext'
 import { demoRadarReport } from '../data/demoData'
 
 export default function Radar() {
+  const tx = useInterfaceText()
   const [report, setReport] = useState(null)
   const [generatedAt, setGeneratedAt] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -46,21 +48,14 @@ export default function Radar() {
           color: '#F0E6C8',
           letterSpacing: '0.05em',
           marginBottom: '4px',
-        }}>Radar</h1>
-        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>
-          Panorama de ameaças relevantes para o seu setor
-        </p>
+        }}>{tx("Radar")}</h1>
+        <p style={{ color: '#8A7A5A', fontFamily: 'Raleway', fontSize: '13px' }}>{tx("Panorama de ameaças relevantes para o seu setor")}</p>
       </div>
 
       {/* Aviso de honestidade técnica — obrigatório */}
       <Card style={{ marginBottom: '24px', borderLeft: '2px solid #8B6914' }}>
-        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>
-          Panorama analítico de ameaças relevantes para o seu setor, baseado no perfil da sua
-          empresa. Esta análise é gerada a partir do{' '}
-          <strong style={{ color: '#E8C97A' }}>conhecimento do modelo de IA</strong> — não é uma
-          busca ao vivo na internet, mas uma síntese estruturada de padrões de ameaça consistentes
-          com seu contexto.
-        </p>
+        <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#F0E6C8', lineHeight: 1.7 }}>{tx("Panorama analítico de ameaças relevantes para o seu setor, baseado no perfil da sua empresa. Esta análise é gerada a partir do")}{tx(' ')}
+          <strong style={{ color: '#E8C97A' }}>{tx("conhecimento do modelo de IA")}</strong>{tx(" — não é uma busca ao vivo na internet, mas uma síntese estruturada de padrões de ameaça consistentes com seu contexto.")}</p>
       </Card>
 
       {/* Ação */}
@@ -82,44 +77,41 @@ export default function Radar() {
             opacity: loading ? 0.5 : 1,
           }}
         >
-          {loading ? 'ANALISANDO...' : report ? '⟳ ATUALIZAR' : 'GERAR PANORAMA'}
+          {tx(loading ? 'ANALISANDO...' : report ? '⟳ ATUALIZAR' : 'GERAR PANORAMA')}
         </button>
-        {generatedAt && (
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#8A7A5A' }}>
-            última atualização: {new Date(generatedAt).toLocaleString('pt-BR')}
+        {tx(generatedAt && (
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#8A7A5A' }}>{tx("última atualização: ")}{new Date(generatedAt).toLocaleString(getInterfaceLocale())}
           </span>
-        )}
+        ))}
       </div>
 
-      {error && (
+      {tx(error && (
         <Card style={{ marginBottom: '16px' }}>
-          <div style={{ color: '#C0392B', fontFamily: 'Inter', fontSize: '13px' }}>{error}</div>
+          <div style={{ color: '#C0392B', fontFamily: 'Inter', fontSize: '13px' }}>{tx(error)}</div>
         </Card>
-      )}
+      ))}
 
       {/* Relatório */}
-      {report ? (
+      {tx(report ? (
         <Card>
           <div style={{
             fontFamily: 'Raleway', fontSize: '11px', fontWeight: '600', color: '#8A7A5A',
             letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '16px',
-          }}>Panorama executivo</div>
+          }}>{tx("Panorama executivo")}</div>
           <div style={{
             fontFamily: 'Inter',
             fontSize: '13px',
             color: '#F0E6C8',
             lineHeight: 1.8,
             whiteSpace: 'pre-wrap',
-          }}>{report}</div>
+          }}>{report === demoRadarReport ? report.split('\n\n').map(tx).join('\n\n') : report}</div>
         </Card>
       ) : !loading && (
         <Card>
-          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>
-            Clique em "Gerar Panorama" para produzir a análise com base no perfil da sua empresa
-            (configurável na aba <strong style={{ color: '#C9A84C' }}>Risco Real</strong>).
+          <div style={{ color: '#8A7A5A', textAlign: 'center', padding: '32px', fontFamily: 'Raleway' }}>{tx("Clique em \"Gerar Panorama\" para produzir a análise com base no perfil da sua empresa (configurável na aba ")}<strong style={{ color: '#C9A84C' }}>{tx("Risco Real")}</strong>).
           </div>
         </Card>
-      )}
+      ))}
     </div>
   )
 }

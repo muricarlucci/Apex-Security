@@ -1,3 +1,4 @@
+import { useInterfaceText, getInterfaceLocale } from '../utils/interfaceText'
 import { useState, useEffect } from 'react'
 import SeverityBadge from '../components/SeverityBadge'
 import Card from '../components/Card'
@@ -13,7 +14,7 @@ const tools = ['TODAS', 'semgrep', 'trivy']
 const formatDate = (isoString) => {
   if (!isoString) return ''
   const date = new Date(isoString)
-  return date.toLocaleString('pt-BR', {
+  return date.toLocaleString(getInterfaceLocale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -33,6 +34,7 @@ const calculateHealthScore = (alerts) => {
 }
 
 export default function Alerts() {
+  const tx = useInterfaceText()
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [severityFilter, setSeverityFilter] = useState('TODAS')
@@ -171,7 +173,7 @@ export default function Alerts() {
         </p>
 
         {/* Security Health Score — compacto, complementa o cabecalho */}
-        {!loading && alerts.length > 0 && (
+        {tx(!loading && alerts.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}>
             <div style={{
               width: '28px', height: '28px', borderRadius: '50%',
@@ -180,10 +182,10 @@ export default function Alerts() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'Cinzel', serif", fontSize: '14px', fontWeight: '700',
               color: health.color, flexShrink: 0,
-            }}>{health.grade}</div>
+            }}>{tx(health.grade)}</div>
             <div>
               <div style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', color: '#F0E6C8' }}>
-                {health.score}/100
+                {tx(health.score)}/100
               </div>
               <div style={{
                 fontFamily: 'Raleway', fontSize: '9px', color: health.color,
@@ -191,7 +193,7 @@ export default function Alerts() {
               }}>{t('alerts.healthScore')} · {t(health.labelKey)}</div>
             </div>
           </div>
-        )}
+        ))}
         </div>
 
         {/* Exportar PDF */}
@@ -226,7 +228,7 @@ export default function Alerts() {
           <span style={{ color: '#8A7A5A', fontSize: '11px', fontFamily: 'Raleway', letterSpacing: '0.1em', marginRight: '4px' }}>{t('alerts.severity')}</span>
           {severities.map(s => (
             <button key={s} style={filterBtnStyle(severityFilter === s)} onClick={() => setSeverityFilter(s)}>
-              {s === 'TODAS' ? t('alerts.all') : s}
+              {tx(s === 'TODAS' ? t('alerts.all') : s)}
             </button>
           ))}
         </div>
@@ -234,14 +236,14 @@ export default function Alerts() {
           <span style={{ color: '#8A7A5A', fontSize: '11px', fontFamily: 'Raleway', letterSpacing: '0.1em', marginRight: '4px' }}>{t('alerts.tool')}</span>
           {tools.map(tool => (
             <button key={tool} style={filterBtnStyle(toolFilter === tool)} onClick={() => setToolFilter(tool)}>
-              {tool === 'TODAS' ? t('alerts.all') : tool.toUpperCase()}
+              {tx(tool === 'TODAS' ? t('alerts.all') : tool.toUpperCase())}
             </button>
           ))}
         </div>
       </div>
 
       {/* Lista */}
-      {loading ? (
+      {tx(loading ? (
         <div style={{ color: '#8A7A5A', fontFamily: 'Raleway', letterSpacing: '0.2em' }}>{t('common.loading')}</div>
       ) : alerts.length === 0 ? (
         <Card>
@@ -268,7 +270,7 @@ export default function Alerts() {
                     fontWeight: '500',
                     color: '#F0E6C8',
                     marginBottom: '4px',
-                  }}>{alert.title}</div>
+                  }}>{isDemoMode ? tx(alert.title) : alert.title}</div>
                   <div style={{
                     fontFamily: 'JetBrains Mono',
                     fontSize: '10px',
@@ -282,17 +284,17 @@ export default function Alerts() {
                     fontSize: '11px',
                     color: '#8A7A5A',
                   }}>
-                    {alert.repository}{alert.file_path ? ` · ${alert.file_path}` : ''}{alert.line_number ? `:${alert.line_number}` : ''}
+                    {alert.repository}{tx(alert.file_path ? ` · ${alert.file_path}` : '')}{tx(alert.line_number ? `:${alert.line_number}` : '')}
                   </div>
-                  {messages[alert.id] && (
+                  {tx(messages[alert.id] && (
                     <div style={{
                       marginTop: '8px',
                       fontSize: '11px',
                       color: messages[alert.id].startsWith('✓') ? '#1A6B3C' : '#C0392B',
                       fontFamily: 'Inter',
                       wordBreak: 'break-all',
-                    }}>{messages[alert.id]}</div>
-                  )}
+                    }}>{tx(messages[alert.id])}</div>
+                  ))}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   <button
@@ -312,7 +314,7 @@ export default function Alerts() {
                       opacity: actionLoading[`rem_${alert.id}`] ? 0.5 : 1,
                     }}
                   >
-                    {actionLoading[`rem_${alert.id}`] ? t('alerts.remediating') : t('alerts.remediate')}
+                    {tx(actionLoading[`rem_${alert.id}`] ? t('alerts.remediating') : t('alerts.remediate'))}
                   </button>
                   <button
                     onClick={() => handleCreatePR(alert.id)}
@@ -331,7 +333,7 @@ export default function Alerts() {
                       opacity: actionLoading[`pr_${alert.id}`] ? 0.5 : 1,
                     }}
                   >
-                    {actionLoading[`pr_${alert.id}`] ? t('alerts.creatingPR') : t('alerts.createPR')}
+                    {tx(actionLoading[`pr_${alert.id}`] ? t('alerts.creatingPR') : t('alerts.createPR'))}
                   </button>
                   <button
                     onClick={() => handleMapRisk(alert.id)}
@@ -350,7 +352,7 @@ export default function Alerts() {
                       opacity: actionLoading[`risk_${alert.id}`] ? 0.5 : 1,
                     }}
                   >
-                    {actionLoading[`risk_${alert.id}`] ? t('alerts.mappingRisk') : t('alerts.mapRisk')}
+                    {tx(actionLoading[`risk_${alert.id}`] ? t('alerts.mappingRisk') : t('alerts.mapRisk'))}
                   </button>
                   <button
                     onClick={() => handleViewSLA(alert.id)}
@@ -369,14 +371,14 @@ export default function Alerts() {
                       opacity: actionLoading[`sla_${alert.id}`] ? 0.5 : 1,
                     }}
                   >
-                    {actionLoading[`sla_${alert.id}`] ? t('alerts.calculatingSLA') : t('alerts.viewSLA')}
+                    {tx(actionLoading[`sla_${alert.id}`] ? t('alerts.calculatingSLA') : t('alerts.viewSLA'))}
                   </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
+      ))}
     </div>
   )
 }
