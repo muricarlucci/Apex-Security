@@ -1,6 +1,10 @@
 # CONTEXTO_APEX — memória viva do dashboard e backend
 
-Última atualização: **2026-10-01**. Versão atual: **v2.3.1**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+Última atualização: **2026-10-01**. Versão atual: **v2.3.2**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+
+## Contingência Gemini v2.3.2
+
+Cliente central nas cinco operações: `gemini-3.8-flash` principal, retry curto após 503 e, após outro 503, somente uma tentativa com `gemini-3.5-flash-lite`. Cota diária 429 explicitamente associada ao modelo principal também permite a contingência; 429 temporário/ambíguo mantém o tratamento anterior. No máximo três requests (duas no principal e uma na contingência), sem retry adicional do 3.5 nem alteração permanente do modelo principal. RPC 20s; orçamento total agora 65s dentro do timeout frontend de 120s. Duas chaves, cache/fingerprints, deduplicação e cancelamento preservados. Não houve testes nem chamadas Gemini. Render: manter `GEMINI_MODEL=gemini-3.8-flash` e as duas chaves, implantar este commit; nenhuma variável adicional necessária.
 
 ## Controle de consumo Gemini v2.3.1
 

@@ -1,5 +1,11 @@
 # Changelog — Apex Security
 
+## v2.3.2 — 2026-10-01
+
+- Modelo principal `gemini-3.8-flash` preservado nas cinco operações. Após duas falhas 503, uma única tentativa de contingência com `gemini-3.5-flash-lite`; cota diária 429 explicitamente associada ao modelo também permite essa contingência, sem alternar chaves inutilmente. Rate limit temporário/429 ambíguo mantém o tratamento anterior.
+- No máximo três requests: duas no principal e uma na contingência, sem retry/fallback adicional no 3.5. RPC de 20s e orçamento total de 65s, dentro do timeout frontend de 120s. Chaves, deduplicação, cache, cancelamento e prompts preservados; nenhuma preferência permanente pelo modelo de contingência.
+- Somente revisão estática do diff; nenhum teste executado e nenhuma chamada Gemini realizada. No Render, manter `GEMINI_MODEL=gemini-3.8-flash` e ambas as chaves, e implantar este commit; não é necessária variável adicional para o fallback.
+
 ## v2.3.1 — 2026-10-01
 
 ### Corrigido

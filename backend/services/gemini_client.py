@@ -12,8 +12,10 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger("uvicorn.error")
 operation_context = ContextVar("gemini_operation", default=None)
-REQUEST_BUDGET_SECONDS = 45
+REQUEST_BUDGET_SECONDS = 65  # Two primary RPCs plus one contingency RPC.
 RPC_TIMEOUT_SECONDS = 20
+PRIMARY_GEMINI_MODEL = "gemini-3.8-flash"
+FALLBACK_GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
 def _load_api_keys() -> list:
@@ -54,6 +56,14 @@ def _daily_quota(error) -> bool:
     ))
 
 
+def _daily_model_quota(error) -> bool:
+    details = _error_details(error)
+    return (isinstance(error, google_errors.ResourceExhausted) and _daily_quota(error)
+            and any(marker in details for marker in (
+                PRIMARY_GEMINI_MODEL, "permodel", "per_model", "per model",
+            )))
+
+
 def _key_specific(error) -> bool:
     details = _error_details(error)
     if isinstance(error, google_errors.Unauthenticated):
@@ -80,7 +90,7 @@ def _remaining(context):
 
 
 def generate_with_fallback(model_name: str, system_instruction: str, prompt: str, max_retries: int = None):
-    """One RPC normally; one extra RPC at most, shared by retry and fallback."""
+    """Up to two primary RPCs, then one contingency RPC for eligible errors."""
     global _current_key_index
     context = operation_context.get() or {
         "operation": "generation", "cancelled": Event(),
@@ -89,13 +99,15 @@ def generate_with_fallback(model_name: str, system_instruction: str, prompt: str
     with _key_lock:
         key_index = _current_key_index
     limit = 2 if max_retries is None else min(2, max(1, max_retries))
+    active_model = model_name
+    fallback_used = False
     clients = []
     try:
-        for attempt in range(1, limit + 1):
+        for attempt in range(1, limit + 2):
             timeout = min(RPC_TIMEOUT_SECONDS, _remaining(context))
             client = glm.GenerativeServiceClient(client_options={"api_key": _API_KEYS[key_index]})
             clients.append(client)
-            model = genai.GenerativeModel(model_name=model_name, system_instruction=system_instruction)
+            model = genai.GenerativeModel(model_name=active_model, system_instruction=system_instruction)
             # SDK 0.5.4's explicit transport slot avoids the global default client.
             # Verified against the pinned dependency; preserve response.text.
             model._client = client
@@ -107,14 +119,20 @@ def generate_with_fallback(model_name: str, system_instruction: str, prompt: str
                 status = getattr(error, "code", None)
                 status = int(status) if isinstance(status, int) else type(error).__name__
                 logger.info("gemini operation=%s model=%s attempt=%s status=%s duration_ms=%s",
-                            context["operation"], model_name, attempt, status,
+                            context["operation"], active_model, attempt, status,
                             round((time.monotonic() - started) * 1000))
-                if attempt < limit and isinstance(error, google_errors.ServiceUnavailable):
+                if not fallback_used and attempt < limit and isinstance(error, google_errors.ServiceUnavailable):
                     _remaining(context)
                     if context["cancelled"].wait(0.5):
                         _remaining(context)
                     continue
-                if attempt < limit and len(_API_KEYS) > 1 and _key_specific(error):
+                if (not fallback_used and model_name.removeprefix("models/") == PRIMARY_GEMINI_MODEL
+                        and (isinstance(error, google_errors.ServiceUnavailable) or _daily_model_quota(error))):
+                    _remaining(context)
+                    active_model = FALLBACK_GEMINI_MODEL
+                    fallback_used = True
+                    continue
+                if not fallback_used and attempt < limit and len(_API_KEYS) > 1 and _key_specific(error):
                     _remaining(context)
                     key_index = (key_index + 1) % len(_API_KEYS)
                     continue
@@ -123,7 +141,7 @@ def generate_with_fallback(model_name: str, system_instruction: str, prompt: str
                     raise RuntimeError(f"{kind}; nenhuma alternancia inutil entre chaves foi realizada") from error
                 raise RuntimeError(f"Gemini indisponivel ({status}); operacao encerrada") from error
             logger.info("gemini operation=%s model=%s attempt=%s status=200 duration_ms=%s",
-                        context["operation"], model_name, attempt,
+                        context["operation"], active_model, attempt,
                         round((time.monotonic() - started) * 1000))
             with _key_lock:
                 _current_key_index = key_index

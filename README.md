@@ -1,4 +1,4 @@
-# Apex Security v2.3.1
+# Apex Security v2.3.2
 
 Plataforma ASPM (Application Security Posture Management), projeto acadêmico de Cibersegurança da FIAP. A Apex Security automatiza detecção, priorização e proposta de correção de vulnerabilidades. Pessoas revisam e decidem o merge de cada Pull Request.
 
@@ -9,9 +9,9 @@ Plataforma ASPM (Application Security Posture Management), projeto acadêmico de
 - [Site de apresentação](https://apex-security-site-apresentacao.vercel.app)
 - [Repositório do dashboard e backend](https://github.com/muricarlucci/Apex-Security)
 
-Versão atual: **v2.3.1**. Consulte o [histórico de mudanças](CHANGELOG.md).
+Versão atual: **v2.3.2**. Consulte o [histórico de mudanças](CHANGELOG.md).
 
-Gemini: modelo principal `gemini-3.8-flash`, uma request por geração e no máximo duas tentativas totais (retry de 503 com 0,5s de espera ou fallback por falha específica da chave). As duas chaves continuam configuradas; limites diários compartilhados e 429 sem evidência de limite por chave não alternam chaves. Cada RPC tem prazo de 20s, com orçamento de 45s no backend e timeout de 120s no frontend para acomodar o cold start. Navegação/cancelamento impede novas tentativas; uma RPC já enviada pode terminar dentro do seu prazo.
+Gemini: modelo principal `gemini-3.8-flash`, uma request normalmente, com retry de 503 após 0,5s. Após o segundo 503, uma única tentativa com `gemini-3.5-flash-lite`. Cota diária 429 explicitamente associada ao modelo principal também permite essa contingência; rate limit temporário/429 ambíguo mantém o tratamento anterior. As duas chaves e o fallback por falha específica da chave permanecem. No máximo três requests (duas no principal, uma na contingência), sem loop nem retry do 3.5. Cada RPC tem prazo de 20s, orçamento total de 65s e timeout frontend de 120s incluindo cold start. Cancelamento impede novas tentativas. No Render, manter `GEMINI_MODEL=gemini-3.8-flash` e ambas as chaves; o modelo de contingência não exige variável adicional.
 
 Resultados válidos são reutilizados por conta e entradas: Radar por até 6h (mantém a data original), Intenção/Risco/SLA por até 1h, Remediação sem expiração enquanto a entrada permanecer igual. Mudanças de entradas/modelo invalidam a reutilização. PostgreSQL impede gerações simultâneas iguais entre abas/processos; a segunda solicitação em andamento recebe 409. A tabela aditiva `gemini_operation_cache` é criada pelo startup existente. Não foram executados testes nem chamadas Gemini nesta alteração, por solicitação do usuário.
 
