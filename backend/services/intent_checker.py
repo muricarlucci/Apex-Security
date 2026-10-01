@@ -39,6 +39,11 @@ Analise a consistencia."""
         raw = response.text.strip()
         raw = raw.replace("```json", "").replace("```", "").strip()
         result = json.loads(raw)
+        if (not isinstance(result, dict) or not isinstance(result.get("consistent"), bool)
+                or not isinstance(result.get("confidence"), (int, float))
+                or not 0 <= result["confidence"] <= 100
+                or not isinstance(result.get("explanation"), str) or not result["explanation"].strip()):
+            raise ValueError("Gemini retornou analise de intencao invalida")
         return result
     except Exception as e:
         return {

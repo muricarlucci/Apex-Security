@@ -5,6 +5,7 @@ from models import CompanyProfile, RiskAssessment, Alert, User
 from services.risk_analyzer import analyze_risk, analyze_sla
 from services.radar import generate_radar_report
 from services.auth import get_current_user
+from services.gemini_operations import gemini_operation, alert_inputs
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -46,6 +47,13 @@ def _profile_dict(profile: CompanyProfile) -> dict:
     }
 
 
+def _analysis_inputs(values):
+    return {
+        "alert": alert_inputs(values),
+        "profile": _profile_dict(_get_or_create_profile(values["db"], values["current_user"].id)),
+    }
+
+
 @router.get("/company-profile")
 def get_company_profile(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     profile = _get_or_create_profile(db, current_user.id)
@@ -70,6 +78,7 @@ def save_company_profile(payload: CompanyProfilePayload, db: Session = Depends(g
 
 
 @router.post("/risk-assessment/{alert_id}", status_code=201)
+@gemini_operation("risk", _analysis_inputs, resource=lambda values: values["alert_id"])
 def create_risk_assessment(alert_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     alert = db.query(Alert).filter(Alert.id == alert_id, Alert.user_id == current_user.id).first()
     if not alert:
@@ -114,6 +123,7 @@ def create_risk_assessment(alert_id: int, db: Session = Depends(get_db), current
 
 
 @router.post("/sla-assessment/{alert_id}", status_code=201)
+@gemini_operation("sla", _analysis_inputs, resource=lambda values: values["alert_id"])
 def create_sla_assessment(alert_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Calcula o prazo de correcao (SLA de Compliance) para a vulnerabilidade,
@@ -195,6 +205,7 @@ def get_risk_assessment(alert_id: int, db: Session = Depends(get_db), current_us
 
 
 @router.get("/radar")
+@gemini_operation("radar", lambda values: _profile_dict(_get_or_create_profile(values["db"], values["current_user"].id)), ttl_seconds=21600, resource=lambda values: "profile")
 def get_radar(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Panorama analitico de ameacas para o setor da empresa.
@@ -205,4 +216,6 @@ def get_radar(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         report = generate_radar_report(_profile_dict(profile))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao gerar radar: {str(e)}")
+    if not report:
+        raise HTTPException(status_code=502, detail="Gemini retornou panorama vazio")
     return {"report": report, "generated_at": datetime.utcnow().isoformat()}

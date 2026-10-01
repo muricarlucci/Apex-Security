@@ -73,6 +73,12 @@ Gere a analise de risco completa conforme o formato especificado."""
         response = generate_with_fallback(GEMINI_MODEL, RISK_SYSTEM_PROMPT, prompt)
         raw = response.text.strip().replace("```json", "").replace("```", "").strip()
         result = json.loads(raw)
+        required = ("financial_impact_min", "financial_impact_max", "fair_reasoning", "lgpd_fine_estimate", "downtime_cost_estimate")
+        if (not isinstance(result, dict) or any(result.get(field) in (None, "") for field in required)
+                or not isinstance(result.get("blast_radius"), dict)
+                or not isinstance(result["blast_radius"].get("nodes"), list)
+                or not isinstance(result["blast_radius"].get("edges"), list)):
+            raise ValueError("Gemini retornou analise de risco incompleta")
         return result
     except json.JSONDecodeError as e:
         raise ValueError(f"Gemini retornou resposta invalida: {e}")
@@ -114,6 +120,12 @@ Calcule o prazo SLA de correcao."""
     try:
         response = generate_with_fallback(GEMINI_MODEL, SLA_SYSTEM_PROMPT, prompt)
         raw = response.text.strip().replace("```json", "").replace("```", "").strip()
-        return json.loads(raw)
+        result = json.loads(raw)
+        if not isinstance(result, dict) or any(
+            not isinstance(result.get(field), str) or not result[field].strip()
+            for field in ("sla_deadline", "sla_reasoning", "compliance_risk_level")
+        ):
+            raise ValueError("Gemini retornou analise SLA incompleta")
+        return result
     except Exception as e:
         raise RuntimeError(f"Erro na analise de SLA: {e}")

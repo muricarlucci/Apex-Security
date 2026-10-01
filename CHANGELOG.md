@@ -1,5 +1,21 @@
 # Changelog — Apex Security
 
+## v2.3.1 — 2026-10-01
+
+### Corrigido
+
+- Retries internos do SDK desativados explicitamente; cada operação usa uma request normalmente e no máximo duas tentativas totais, com apenas um retry de 503 e backoff de 0,5s.
+- Clientes independentes por chave, sem `genai.configure` global; ambas as chaves e fallback útil permanecem. Cota diária compartilhada e 429 de escopo desconhecido/projeto não alternam chaves.
+- RPC limitada a 20s e orçamento de geração a 45s; frontend aguarda até 120s incluindo cold start e cancela chamadas abandonadas. Disconnect/finalização impede novas tentativas.
+- Deduplicação no frontend e lock transacional PostgreSQL por conta/operação/entrada entre abas e processos; concorrente recebe 409 sem gerar novamente.
+- Cache persistente de resultados válidos: Radar 6h com timestamp original, Intenção/Risco/SLA 1h; mudança de perfil/alerta/commit/diff/modelo invalida o resultado. Risco e SLA continuam independentes.
+- Remediação válida salva é preservada; entradas alteradas desde o registro do fingerprint geram nova correção. Registros legados válidos são adotados sem chamada adicional.
+- Logging somente de operação/modelo/tentativa/status/duração; tabela nova criada de forma aditiva pelo `create_all` existente. SDK/prompt/idiomas preservados.
+
+### Verificação
+
+- Revisão estática do diff e dos caminhos de SDK/startup. Nenhum teste criado/executado, nenhum servidor iniciado e nenhuma chamada real Gemini realizada, conforme solicitação do usuário. Validação funcional em produção não realizada nesta sessão.
+
 ## v2.3.0 — 2026-10-01
 
 ### Corrigido

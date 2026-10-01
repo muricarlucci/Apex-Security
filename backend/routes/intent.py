@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from services.intent_checker import check_intent_consistency
 from services.auth import get_current_user
 from models import User
+from services.gemini_operations import gemini_operation
 
 router = APIRouter()
 
@@ -13,6 +14,7 @@ class IntentCheckPayload(BaseModel):
 
 
 @router.post("/intent-check")
+@gemini_operation("intent", lambda values: values["payload"].model_dump())
 def check_intent(payload: IntentCheckPayload, current_user: User = Depends(get_current_user)):
     """
     Verificador leve de consistencia entre mensagem de commit e diff real.

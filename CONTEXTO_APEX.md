@@ -1,6 +1,12 @@
 # CONTEXTO_APEX — memória viva do dashboard e backend
 
-Última atualização: **2026-10-01**. Versão atual: **v2.3.0**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+Última atualização: **2026-10-01**. Versão atual: **v2.3.1**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+
+## Controle de consumo Gemini v2.3.1
+
+As cinco operações mantêm `gemini-3.8-flash` e as duas chaves configuradas. SDK 0.5.4 preservado, com cliente de transporte explícito por chave (sem configuração global), `retry=None`, RPC de 20s e orçamento de 45s. No máximo duas tentativas totais: apenas um retry 503 com 0,5s de espera ou fallback em falha específica da chave; cota diária compartilhada e 429 desconhecido/do projeto não alternam chaves. Frontend: timeout de 120s incluindo cold start, promise compartilhada por entrada/sessão e AbortController ao navegar/sair/entrar em Demo. Disconnect/finalização impede novas tentativas; RPC já enviada pode terminar dentro do seu prazo.
+
+Tabela aditiva `gemini_operation_cache` criada pelo `Base.metadata.create_all` existente: resultado validado, fingerprint de entradas/modelo/revisão, separado por usuário. Lock PostgreSQL transacional impede duplicação entre processos/abas, retornando 409 para operação já em andamento. Radar reutiliza por 6h com data original; Intenção/Risco/SLA por 1h, ações independentes. Remediação mantém resultado válido salvo e regenera se a entrada mudou desde o fingerprint; registros legados válidos são adotados sem chamar Gemini. Falhas de geração/parsing não entram no cache. Nenhum teste criado/executado ou chamada real Gemini nesta sessão, por solicitação explícita do usuário; revisão somente estática.
 
 ## Estado e transição
 

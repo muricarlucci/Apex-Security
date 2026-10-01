@@ -4,6 +4,20 @@ from sqlalchemy.sql import func
 from database import Base
 
 
+class GeminiOperationCache(Base):
+    # main.py imports all routers/models BEFORE Base.metadata.create_all.
+    # This new additive table is created by the existing startup mechanism.
+    __tablename__ = "gemini_operation_cache"
+
+    cache_key = Column(String(64), primary_key=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    operation = Column(String(30), nullable=False)
+    input_fingerprint = Column(String(64), nullable=False)
+    result_json = Column(Text, nullable=False)
+    generated_at = Column(DateTime(timezone=True), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+
+
 class User(Base):
     """
     Conta de acesso. Cada usuario ve apenas os proprios dados (multi-tenant).

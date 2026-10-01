@@ -1,4 +1,4 @@
-# Apex Security v2.3.0
+# Apex Security v2.3.1
 
 Plataforma ASPM (Application Security Posture Management), projeto acadêmico de Cibersegurança da FIAP. A Apex Security automatiza detecção, priorização e proposta de correção de vulnerabilidades. Pessoas revisam e decidem o merge de cada Pull Request.
 
@@ -9,7 +9,11 @@ Plataforma ASPM (Application Security Posture Management), projeto acadêmico de
 - [Site de apresentação](https://apex-security-site-apresentacao.vercel.app)
 - [Repositório do dashboard e backend](https://github.com/muricarlucci/Apex-Security)
 
-Versão atual: **v2.3.0**. Consulte o [histórico de mudanças](CHANGELOG.md).
+Versão atual: **v2.3.1**. Consulte o [histórico de mudanças](CHANGELOG.md).
+
+Gemini: modelo principal `gemini-3.8-flash`, uma request por geração e no máximo duas tentativas totais (retry de 503 com 0,5s de espera ou fallback por falha específica da chave). As duas chaves continuam configuradas; limites diários compartilhados e 429 sem evidência de limite por chave não alternam chaves. Cada RPC tem prazo de 20s, com orçamento de 45s no backend e timeout de 120s no frontend para acomodar o cold start. Navegação/cancelamento impede novas tentativas; uma RPC já enviada pode terminar dentro do seu prazo.
+
+Resultados válidos são reutilizados por conta e entradas: Radar por até 6h (mantém a data original), Intenção/Risco/SLA por até 1h, Remediação sem expiração enquanto a entrada permanecer igual. Mudanças de entradas/modelo invalidam a reutilização. PostgreSQL impede gerações simultâneas iguais entre abas/processos; a segunda solicitação em andamento recebe 409. A tabela aditiva `gemini_operation_cache` é criada pelo startup existente. Não foram executados testes nem chamadas Gemini nesta alteração, por solicitação do usuário.
 
 O backend no plano gratuito do Render dorme após 15 minutos sem uso; a primeira resposta pode levar 30 a 50 segundos. O banco usa Neon. Acorde a API antes de uma apresentação.
 

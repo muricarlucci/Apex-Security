@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, test_connection, run_additive_migrations
 from services.cors_config import get_allowed_origins
+from services.gemini_operations import GeminiRequestLifecycle
 from routes.scan import router as scan_router
 from routes.remediate import router as remediate_router
 from routes.pullrequest import router as pr_router
@@ -17,7 +18,7 @@ run_additive_migrations()
 app = FastAPI(
     title="Apex Security API",
     description="Plataforma ASPM — Apex Security v2.3",
-    version="2.3.0"
+    version="2.3.1"
 )
 
 app.add_middleware(
@@ -27,6 +28,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GeminiRequestLifecycle)
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(contact_router, prefix="/api", tags=["contact"])
@@ -47,7 +49,7 @@ async def startup_event():
 def root():
     return {
         "service": "Apex Security API",
-        "version": "2.3.0",
+        "version": "2.3.1",
         "status": "online",
         "docs": "/docs",
         "health": "/health"

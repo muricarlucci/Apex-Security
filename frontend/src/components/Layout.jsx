@@ -1,9 +1,10 @@
 import { useInterfaceText } from '../utils/interfaceText'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
 import { useDemoMode } from '../context/DemoContext'
+import { cancelGeminiRequests } from '../services/api'
 
 const navItems = [
   { path: '/', key: 'dashboard', icon: '◈' },
@@ -26,6 +27,9 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { isDemoMode, setIsDemoMode } = useDemoMode()
   const { t } = useTranslation()
+
+  // Abort abandoned AI operations when navigating, logging out or entering Demo.
+  useEffect(() => () => cancelGeminiRequests(), [location.pathname, isDemoMode])
 
   return (
     <div style={{

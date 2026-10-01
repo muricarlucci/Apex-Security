@@ -4,6 +4,7 @@ from database import get_db
 from models import Alert, Remediation, User
 from services.remediator import request_remediation
 from services.auth import get_current_user
+from services.gemini_operations import gemini_operation, alert_inputs, reuse_saved_result
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -24,6 +25,7 @@ class RemediationResponse(BaseModel):
 
 
 @router.post("/remediate/{alert_id}", status_code=201)
+@gemini_operation("remediation", alert_inputs, ttl_seconds=None, resource=lambda values: values["alert_id"])
 def remediate_alert(alert_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Recebe um alert_id, busca o alerta no banco,
@@ -39,7 +41,10 @@ def remediate_alert(alert_id: int, db: Session = Depends(get_db), current_user: 
         Remediation.alert_id == alert_id,
         Remediation.user_id == current_user.id
     ).first()
-    if existing:
+    if existing and reuse_saved_result() and all(
+        isinstance(value, str) and value.strip()
+        for value in (existing.patch_code, existing.test_code, existing.pr_description)
+    ):
         return {
             "message": "Este alerta ja possui remediacao",
             "remediation_id": existing.id,
@@ -62,14 +67,12 @@ def remediate_alert(alert_id: int, db: Session = Depends(get_db), current_user: 
         raise HTTPException(status_code=502, detail=f"Erro na remediacao via LLM: {e}")
 
     # Salvar no banco
-    remediation = Remediation(
-        user_id=current_user.id,
-        alert_id=alert_id,
-        patch_code=result["patch_code"],
-        test_code=result["test_code"],
-        pr_description=result["pr_description"]
-    )
-    db.add(remediation)
+    remediation = existing or Remediation(user_id=current_user.id, alert_id=alert_id)
+    remediation.patch_code = result["patch_code"]
+    remediation.test_code = result["test_code"]
+    remediation.pr_description = result["pr_description"]
+    if not existing:
+        db.add(remediation)
     db.commit()
     db.refresh(remediation)
 

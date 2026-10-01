@@ -80,6 +80,8 @@ Gere o JSON com patch_code, test_code e pr_description conforme instruido."""
     missing = [f for f in required_fields if f not in result]
     if missing:
         raise ValueError(f"Resposta do Gemini faltando campos obrigatorios: {missing}")
+    if any(not isinstance(result[field], str) or not result[field].strip() for field in required_fields):
+        raise ValueError("Resposta do Gemini contem campos de remediacao vazios ou invalidos")
 
     # Reverter DLP — restaurar secrets no patch gerado
     if secret_mapping:
