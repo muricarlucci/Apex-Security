@@ -1,3 +1,10 @@
+/*
+SPDX-License-Identifier: GPL-3.0-or-later
+Apex Security - Application Security Posture Management platform
+Copyright (C) 2026 Apex Security contributors
+Licensed under the GNU General Public License v3.0 or later.
+See LICENSE.md in the repository root for the full license text.
+*/
 // Entry used only by the offline browser regression script.
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
