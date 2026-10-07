@@ -1,5 +1,32 @@
 # Changelog — Apex Security
 
+## v3.0.0 — 2026-10-07
+
+### Adicionado
+
+- Análise dinâmica (DAST) real com OWASP ZAP no GitHub Actions: laboratório Juice Shop ou URL pública autorizada, passivo por padrão e ativo restrito a alvos de treinamento.
+- ASU ZAP separado, tabela `dast_scans` e colunas opcionais `scan_type`, `target_url`, `cwe_id`, `solution`, `dast_scan_id` em alertas, por migração aditiva.
+- Página DAST, acompanhamento por polling, histórico, resumo, link Actions, filtro ZAP e solução expansível; exemplos locais em Demo e traduções nos sete idiomas.
+- Autorização registrada, validação URL/DNS IPv4/IPv6, limites por conta, concorrência global, HMAC com nonce/expiração, limite de payload e bloqueio de replay após estado final.
+- Persistência atômica de resultados; uma notificação Discord depois do commit.
+- Licenciamento GPL v3 ou posterior: texto oficial integral em LICENSE.md, cabeçalhos SPDX, AUTHORS.md, THIRD_PARTY_NOTICES.md e verificador de fontes rastreadas.
+- README reescrito, docs/dast.md e documentação ASU/deploy/contexto atualizada.
+
+### Preservado
+
+- Pipeline Semgrep/Trivy e sua cópia; lógica de ingestão POST /api/scan, normalização/priorização/DLP e serviços existentes, exceto os comentários de licença.
+- Modelo Gemini principal, contingência, duas chaves, cliente, retries, wrappers de cache/deduplicação, prompts e ações independentes Risco/SLA.
+- Autenticação, CORS, ações de alertas estáticos, idiomas portugueses existentes, PDFs e fórmula Health Score.
+
+### Verificado e limites
+
+- 181 testes offline passaram; build e consistência dos sete idiomas passaram; 112 combinações rota/idioma e 14 PDFs em navegador com APIs simuladas, incluindo Demo DAST sem dispatch/polling real.
+- Baseline pytest inicialmente bloqueada pela DLL gRPC local; transporte SDK isolado apenas em testes. Quatro testes antigos Gemini foram atualizados para o contrato já existente v2.3.2, sem mudança no cliente de produção.
+- Ingestão estática comparada por AST; workflows estáticos byte a byte idênticos; arquivos protegidos ganharam apenas cabeçalhos, sem linhas removidas.
+- Nenhum scanner, servidor, Gemini, Resend ou chamada à API GitHub foi executado na validação. Secrets, deploy Live e teste real DAST ficam para o operador.
+- Novas colunas entram no fingerprint genérico de Alert e podem invalidar uma vez caches antigos Remediação/Risco/SLA. O wrapper protegido não foi alterado; dados salvos não são apagados.
+- Validação DNS não é proteção contínua de egress/rebinding; concorrência Actions não é fila durável ilimitada. Limites documentados.
+
 ## v2.3.2 — 2026-10-01
 
 - Modelo principal `gemini-3.8-flash` preservado nas cinco operações. Após duas falhas 503, uma única tentativa de contingência com `gemini-3.5-flash-lite`; cota diária 429 explicitamente associada ao modelo também permite essa contingência, sem alternar chaves inutilmente. Rate limit temporário/429 ambíguo mantém o tratamento anterior.

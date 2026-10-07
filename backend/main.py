@@ -35,8 +35,8 @@ run_additive_migrations()
 
 app = FastAPI(
     title="Apex Security API",
-    description="Plataforma ASPM — Apex Security v2.3",
-    version="2.3.2"
+    description="Plataforma ASPM — Apex Security v3.0",
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -68,7 +68,7 @@ async def startup_event():
 def root():
     return {
         "service": "Apex Security API",
-        "version": "2.3.2",
+        "version": "3.0.0",
         "status": "online",
         "docs": "/docs",
         "health": "/health"
@@ -77,4 +77,4 @@ def root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "Apex Security API v2.2"}
+    return {"status": "ok", "service": "Apex Security API v3.0"}

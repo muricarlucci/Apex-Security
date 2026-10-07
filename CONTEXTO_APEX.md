@@ -1,107 +1,111 @@
-# CONTEXTO_APEX — memória viva do dashboard e backend
+# CONTEXTO_APEX — dashboard e backend
 
-Última atualização: **2026-10-01**. Versão atual: **v2.3.2**. Este repositório é [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), na branch `main`. O site de apresentação fica em outro repositório e não deve ser editado aqui. Leia também [README.md](README.md), [DEPLOY.md](DEPLOY.md), [CHANGELOG.md](CHANGELOG.md) e [AGENTS.md](AGENTS.md).
+Atualizado em **2026-10-07**. Versão **3.0.0**. Repositório [muricarlucci/Apex-Security](https://github.com/muricarlucci/Apex-Security), branch `main`, workspace `D:\DASHBOARD APEX\Apex-Security`. Este é o dashboard/backend; o site institucional pertence a outro repositório e não foi editado.
 
-## Contingência Gemini v2.3.2
+Leia [AGENTS.md](AGENTS.md), [README.md](README.md), [CHANGELOG.md](CHANGELOG.md), [DEPLOY.md](DEPLOY.md), [ASU](docs/asu-schema.md) e [DAST](docs/dast.md) antes de alterar o projeto.
 
-Cliente central nas cinco operações: `gemini-3.8-flash` principal, retry curto após 503 e, após outro 503, somente uma tentativa com `gemini-3.5-flash-lite`. Cota diária 429 explicitamente associada ao modelo principal também permite a contingência; 429 temporário/ambíguo mantém o tratamento anterior. No máximo três requests (duas no principal e uma na contingência), sem retry adicional do 3.5 nem alteração permanente do modelo principal. RPC 20s; orçamento total agora 65s dentro do timeout frontend de 120s. Duas chaves, cache/fingerprints, deduplicação e cancelamento preservados. Não houve testes nem chamadas Gemini. Render: manter `GEMINI_MODEL=gemini-3.8-flash` e as duas chaves, implantar este commit; nenhuma variável adicional necessária.
+## Estado atual e infraestrutura
 
-## Controle de consumo Gemini v2.3.1
+| Componente | Endereço / configuração |
+|---|---|
+| FastAPI / Render | https://apex-security-xzk4.onrender.com |
+| Swagger / saúde | `/docs` e `/health` na API |
+| React/Vite / Vercel | https://apex-security-kappa.vercel.app |
+| Site institucional / Vercel | https://apex-security-site-apresentacao.vercel.app |
+| PostgreSQL / Neon | Conexão privada em `DATABASE_URL` |
+| Código | https://github.com/muricarlucci/Apex-Security |
 
-As cinco operações mantêm `gemini-3.8-flash` e as duas chaves configuradas. SDK 0.5.4 preservado, com cliente de transporte explícito por chave (sem configuração global), `retry=None`, RPC de 20s e orçamento de 45s. No máximo duas tentativas totais: apenas um retry 503 com 0,5s de espera ou fallback em falha específica da chave; cota diária compartilhada e 429 desconhecido/do projeto não alternam chaves. Frontend: timeout de 120s incluindo cold start, promise compartilhada por entrada/sessão e AbortController ao navegar/sair/entrar em Demo. Disconnect/finalização impede novas tentativas; RPC já enviada pode terminar dentro do seu prazo.
+Plataforma ASPM acadêmica de Cibersegurança FIAP 2026. Autores/contribuidores: **Murilo Carlucci, Guilherme Catto e Miguel Domingos**. Desenvolvimento anterior e histórico de autoria são preservados; infraestrutura e repositório atuais estão na conta de Murilo.
 
-Tabela aditiva `gemini_operation_cache` criada pelo `Base.metadata.create_all` existente: resultado validado, fingerprint de entradas/modelo/revisão, separado por usuário. Lock PostgreSQL transacional impede duplicação entre processos/abas, retornando 409 para operação já em andamento. Radar reutiliza por 6h com data original; Intenção/Risco/SLA por 1h, ações independentes. Remediação mantém resultado válido salvo e regenera se a entrada mudou desde o fingerprint; registros legados válidos são adotados sem chamar Gemini. Falhas de geração/parsing não entram no cache. Nenhum teste criado/executado ou chamada real Gemini nesta sessão, por solicitação explícita do usuário; revisão somente estática.
+Render, Neon e Vercel são usados em planos gratuitos. O cold start observado/documentado do Render pode levar 30–50s. Não prometer disponibilidade contínua. `VITE_API_URL` entra no build; alteração exige redeploy Vercel. `FRONTEND_URL` e `SITE_URL` montam o CORS. `/api/contact` atende também o site institucional.
 
-## Estado e transição
+## Entrega v3.0.0
 
-Apex Security é uma plataforma ASPM acadêmica do curso de Cibersegurança da FIAP. O desenvolvimento anterior usou Claude Code em outro computador; Murilo assumiu o projeto e passou a trabalhar com Codex (OpenAI). Os repositórios foram transferidos para a conta atual. Banco Neon, backend Render, dashboard Vercel e site Vercel foram recriados em contas de Murilo, assim como chaves e tokens. O usuário confirmou em 2026-10-01 que salvou ambos os secrets `APEX_API_URL` e `APEX_USER_API_KEY` no GitHub Actions; a ingestão autenticada foi validada em produção após o deploy v2.2.1, com HTTP 201 para Semgrep e Trivy na segunda tentativa do Actions 36900747354. CORS do dashboard e do site também foi confirmado.
+- DAST real com ZAP oficial no Actions, página `/dast`, laboratório Juice Shop e URL pública autorizada.
+- Tabela `dast_scans`; cinco colunas opcionais de `alerts`; router novo e ASU ZAP separado.
+- Callback HMAC, validade, limites, autorização declarada, validação DNS, transação atômica e resumo Discord.
+- Badge de tipo, filtro ZAP, solução expansível e manutenção das ações Risco/SLA; não há patch/PR DAST.
+- Demo com cinco achados fictícios, andamento local, sem dispatch/polling da API; novas mensagens nos sete idiomas.
+- GPL-3.0-or-later: texto oficial integral, cabeçalhos, autores, avisos de terceiros e verificador.
+- README reescrito, documentação DAST/ASU/deploy e versão atualizadas.
 
-| Peça | Endereço ou configuração |
-| --- | --- |
-| Backend FastAPI no Render | https://apex-security-xzk4.onrender.com |
-| Saúde e Swagger | https://apex-security-xzk4.onrender.com/health e https://apex-security-xzk4.onrender.com/docs |
-| Dashboard React/Vite na Vercel | https://apex-security-kappa.vercel.app |
-| Site de apresentação na Vercel | https://apex-security-site-apresentacao.vercel.app |
-| PostgreSQL | Neon, conexão privada por `DATABASE_URL` |
-| GitHub | https://github.com/muricarlucci/Apex-Security |
+Publicação do código **não configura secrets automaticamente**. A validação real DAST depende do operador completar a seção DAST do DEPLOY: `APEX_DAST_SECRET` no GitHub e `DAST_CALLBACK_SECRET` no Render, mesmo valor; PAT válido; deploy Live e migrations sem erro. Nenhum segredo foi gerado/publicado por esta entrega e nenhum scan real foi executado localmente.
 
-Render, Neon e Vercel são usados em planos gratuitos. O Render dorme após cerca de 15 minutos de inatividade; o cold start pode durar 30 a 50 segundos. `VITE_API_URL` é incorporada ao build do dashboard, então mudar seu valor exige Redeploy. O site usa `POST /api/contact` da API; `SITE_URL` no Render libera sua origem no CORS. `FRONTEND_URL` libera a origem do dashboard.
+## Doze módulos
 
-## Objetivo e fluxo real
+| Nº | Função | Implementação |
+|---|---|---|
+| 1 | Pipeline CI/CD estático | Actions com Semgrep/Trivy no repositório cliente |
+| 2 | ASU | `services/normalizer.py` |
+| 3 | Priorização IaC | `services/prioritizer.py`, `rules.json` |
+| 4 | DLP de borda | `services/dlp.py` |
+| 5 | Remediação | `services/remediator.py` |
+| 6 | Pull Request | `services/pr_creator.py`, sem merge automático |
+| 7 | Anomalias | Isolation Forest, consultivo |
+| 8 | Intenção | Mensagem de commit versus diff, consultivo |
+| 9 | Risco Real / SLA | FAIR/LGPD/downtime/blast radius; duas ações independentes |
+| 10 | Autenticação | JWT/bcrypt/conta/chave de integração |
+| 11 | Radar | Panorama Gemini, sem busca ao vivo |
+| 12 | DAST | ZAP no Actions + `services/dast_*`, `routes/dast.py` |
 
-Segurança deve ser automatizada com pouco atrito e custo operacional próximo de zero. Um push do desenvolvedor aciona `.github/workflows/apex-scan.yml` no repositório cliente. Semgrep e Trivy rodam na CPU do GitHub Actions, geram JSON e fazem `POST {APEX_API_URL}/api/scan` com `X-Apex-Api-Key`. O workflow falha se o envio não receber HTTP 2xx e usa `github.repository` dinamicamente. A cópia em `pipeline/.github/workflows/` é só referência e deve permanecer idêntica à da raiz.
+Numeração somente em documentação. Preto `#0A0A0A`, dourado `#C9A84C`; fontes Cinzel, Raleway, Inter e JetBrains Mono. PDF, Health Score, traduções e ações antigas foram preservados; a inclusão dos dados DAST altera naturalmente os totais de alertas exibidos, sem mudar a fórmula do score.
 
-O backend normaliza para ASU, prioriza por regras e salva alertas por `user_id`. O dashboard exibe alertas e permite Remediar, Criar PR, Mapear Risco e Ver SLA. O PR inclui patch e teste gerados, mas o merge exige revisão humana. A severidade oficial é a das regras determinísticas; análises estatísticas e de IA são consultivas.
+## Fluxo estático preservado
 
-## Onze módulos
+Push → `.github/workflows/apex-scan.yml` do cliente → Semgrep/Trivy → `POST /api/scan` com `X-Apex-Api-Key` → ASU → regras determinísticas → persistência por usuário. Cópia em `pipeline/.github/workflows/apex-scan.yml` é idêntica e apenas referência.
 
-| Nº | Nome | Implementação e limite |
-| --- | --- | --- |
-| 1 | Pipeline CI/CD | GitHub Actions, Semgrep e Trivy; scanner executa no pipeline cliente |
-| 2 | Normalização ASU | `services/normalizer.py`; JSON canônico de qualquer scanner |
-| 3 | Priorização IaC | `services/prioritizer.py` e `rules.json`; fonte oficial da severidade |
-| 4 | DLP de borda | `services/dlp.py`; ofusca segredos do trecho de código da remediação e reverte depois |
-| 5 | Remediação Gemini | `services/remediator.py`; patch e teste unitário obrigatório em JSON |
-| 6 | Pull Request | `services/pr_creator.py`; branch, commits e PR via PyGitHub, sem merge automático |
-| 7 | Anomalias | Isolation Forest; retreina por chamada e é apenas sinal consultivo |
-| 8 | Intenção | Compara mensagem de commit e diff via Gemini; informa, não bloqueia |
-| 9 | Risco Real | Perfil da empresa, estimativa FAIR/LGPD/downtime, blast radius em reactflow e sugestão de SLA |
-| 10 | Autenticação | JWT com expiração, bcrypt, `user_id` e chave de integração por conta |
-| 11 | Radar | Panorama setorial via Gemini; não faz busca ao vivo |
+Secrets do cliente: `APEX_API_URL=https://apex-security-xzk4.onrender.com` e `APEX_USER_API_KEY`, copiada da sidebar da conta. Ambos foram confirmados pelo usuário em 2026-10-01. A ingestão Semgrep/Trivy autenticada recebeu 201 após deploy v2.2.1 (registro histórico Actions 36900747354); isso não é uma validação nova de produção da v3.
 
-A numeração aparece em README e CONTEXTO, nunca na UI. Anomalias não substituem a priorização; Intenção não bloqueia PR; Risco Real e SLA são estimativas analíticas, não valores contábeis ou prazos legais; Radar é síntese do conhecimento do modelo.
+Sem chave, o scan mantém o modo legado (`user_id=None`); chave enviada mas inválida retorna 401. Repositório + todos os alertas são gravados em uma transação; apenas conflito do nome único usa upsert. Conexão interrompida/pool indisponível retorna 503; erros reais de SQL/constraints, 500. Sem replay automático e sem idempotência plena; commit com confirmação perdida exige conferir o banco antes de reenviar. Discord após commit.
 
-## Recursos de produto
+## Fluxo DAST
 
-A versão 2.0 adicionou sidebar com Chave de Integração, Conta, Contato e Notificações; fallback entre `GEMINI_API_KEY`, `GEMINI_API_KEY_2` e outras chaves em `services/gemini_client.py`; notificações por webhook do Discord; Modo Demo com dados fictícios; PDF de Alertas e Risco Real via jsPDF; Security Health Score; timestamps nos alertas. Fórmula do score: `100 - 25×críticos - 10×altos - 5×médios`, limitado ao intervalo apropriado; A ≥ 90, B 70–89, F < 70.
+Dashboard/JWT → POST `/api/dast/scans` → valida/limita/cria queued → PyGithub workflow_dispatch → `.github/workflows/apex-dast.yml` → `pipeline/dast_job.py` → ZAP Docker → callback HMAC → ASU ZAP → uma transação com estado final e alertas → resumo Discord → polling de 10s.
 
-A versão 2.1 migrou o contato para a API HTTPS do Resend e adicionou sete idiomas via react-i18next: pt (padrão), en, es, zh, hi, fr, ja. A versão 2.3 completa as traduções da interface com catálogos adicionais `interface.*.json`, mantendo os arquivos originais de tradução e os textos em português intactos. Mensagens de ações já exibidas reagem à troca de idioma. Datas, filtros visuais, gráficos e PDF seguem a seleção; valores enviados à API, código e dados reais permanecem originais. Conteúdos narrativos reais da IA não são traduzidos automaticamente. Não fixe `lng: 'pt'` no `i18n.js`, pois isso anula a preferência salva. O envio de contato usa `RESEND_API_KEY`, `CONTACT_EMAIL_TO` e `RESEND_FROM_ADDRESS`.
+Laboratório `bkimminich/juice-shop`, loopback3000 no runner; ZAP `ghcr.io/zaproxy/zaproxy:stable`, `--network host`. Baseline passivo padrão; full permite ataques apenas no lab ou hostname exato habilitado. AJAX spider nos dois modos. Processo ZAP tem prazo de 20 minutos; job, 30. Sem resultado JSON válido/código aceitável, falha explícita.
 
-Validação v2.3.0: 88 testes do backend, consistência de 331 mensagens nos sete idiomas, 105 combinações de rota/idioma no navegador, português equivalente ao commit `796987e`, persistência da seleção, mensagens reativas, payloads e código preservados, Demo offline, 14 PDFs e build de produção. A suíte de navegador usa Playwright com APIs simuladas e bundles em memória, sem servidor. Nenhuma chamada real ao Gemini foi feita pelos testes. PDFs zh/hi/ja usam imagem do texto renderizado pelo navegador, evitando perda de caracteres; o texto desses PDFs não é pesquisável.
+`dast_scans` registra conta, alvo, modo, nonce público, prazo, aceite/instante, status, timestamps, contagem, versão e erro curto. Estados persistidos queued/running/completed/failed/timeout. Processing é só etapa visual. Histórico limitado aos 20 últimos da conta. Pseudo-repositórios `dast:*` ficam fora da página Repositórios.
 
-## Código, banco e autenticação
+Controles: URL/DNS IPv4/IPv6 públicos, sem credenciais; aceite booleano obrigatório para custom; cinco solicitações em 24h por conta, uma ativa, lock de usuário em PostgreSQL; concorrência global do Actions. HMAC-SHA256(secret, `scan_id:nonce`), comparação constante, 45 minutos desde a solicitação, rejeição após estado final, corpo máximo de 8 MiB, raw com até 20 instâncias. Nenhum segredo em input ou log. O HMAC não inclui o corpo; HTTPS e administradores do repositório são parte da confiança. Validação DNS não substitui egress contínuo e não elimina rebinding/redirecionamentos.
 
-`backend/main.py` registra os routers de auth, contact, scan, remediation, pull requests, intent e risk. Ao importar `main.py`, `Base.metadata.create_all(bind=engine)` cria tabelas faltantes e `run_additive_migrations()` em `database.py` executa alterações aditivas legadas. Não há arquivos de migração Alembic; a existência de alterações aditivas em SQL é uma divergência em relação à descrição simplificada de que não há migrações. Não introduza SQL cru ou migrações novas sem combinar.
+Normalização: risco 3 → HIGH, 2 → MEDIUM, 1 → LOW, 0 → INFO; sem CRITICAL; um alerta por alerta ZAP, sem linha/CVE, CWE separado e solução sem HTML. **Nunca `prioritize()` para DAST**, evitando rebaixamento por URL contendo `test`. A severidade ajustada é a do ZAP. Callback completed é atômico, replay retorna 409; erro Discord não desfaz resultado.
 
-As tabelas têm `user_id`. As consultas normais filtram pela conta autenticada. `POST /api/scan` é exceção: o workflow usa `X-Apex-Api-Key`; sem chave, aceita o scan e grava dados legados com `user_id=None`; se uma chave for enviada mas não existir no banco, responde 401 sem gravar. A chave de integração pode ser consultada e regenerada na sidebar. O token JWT dura sete dias; `localStorage` armazena a sessão no frontend.
+Concorrência do Actions não é fila durável: pending pode ser substituído. A API expira registros sem retorno quando são lidos. Callbacks running/failed fazem uma tentativa; completed admite até cinco entregas, sem repetir scanner. Se ACK HTTP se perder após commit, o workflow pode falhar com 409 e o dashboard continuar corretamente completed.
 
-`APEX_API_URL` não é lida pelo backend: é exclusivamente um secret do GitHub Actions, com `https://apex-security-xzk4.onrender.com` sem `/api` nem barra final. `GITHUB_REPO` é lida por `services/pr_creator.py`, com padrão `muricarlucci/Apex-Security`. `FRONTEND_URL` e `SITE_URL` são lidas pelo CORS; espaços, barra final, valores vazios e duplicados são tratados pela função `get_allowed_origins()`.
+## Banco e migrações
 
-Desde v2.2.1, o engine usa `pool_pre_ping=True`, `pool_recycle=300` e `hide_parameters=True`. `/api/scan` valida o JSON antes de tocar no banco e grava repositório + todos os alertas em uma transação. Apenas o conflito do nome único do repositório é tratado com upsert; outros erros não são ignorados. Desconexões durante uma transação retornam 503, erros reais de SQL/constraints retornam 500, sem retry automático. Discord só é chamado após o commit, com valores capturados antes dele. Migração/startup com falha não continua silenciosamente. Não há idempotência: reenvios podem duplicar alertas, especialmente quando a confirmação de commit se perde.
+`main.py` importa routers/modelos antes de `Base.metadata.create_all(bind=engine)`. Cria tabelas ausentes, inclusive `gemini_operation_cache` e agora `dast_scans`. `database.py` aplica o mecanismo existente `ADD COLUMN IF NOT EXISTS`: 15 colunas verificadas após esta entrega, cinco delas DAST e nullable. Nenhum DROP, recriação ou limpeza de dados. Não há conjunto de migrations Alembic versionadas.
 
-## Regras permanentes
+Engine existente: pre-ping, recycle300s, parâmetros SQL ocultos e rollback/close por request. Esses mecanismos não recuperam transação já interrompida. Não alterar banco destrutivamente.
 
-- Python 3.11.x; não usar emojis em arquivos Python por causa do console Windows cp1252.
-- Modelo padrão centralizado `gemini-3.8-flash`, configurável por `GEMINI_MODEL`. O usuário confirmou a alteração dessa variável no Render em 2026-10-01. Remediação, Intenção, Radar, Risco Real e SLA usam a mesma configuração; não houve mudança de SDK nem de prompts.
-- SQLAlchemy como ORM. Não alterar esquema de forma destrutiva nem introduzir migrações novas sem combinar.
-- Nunca versionar `.env`, senhas, tokens ou chaves; nunca embutir token na URL do Git.
-- Preservar a identidade visual preto `#0A0A0A`, dourado `#C9A84C` e fontes Cinzel, Raleway, Inter e JetBrains Mono; tokens em `frontend/src/theme.js`.
-- Modo Demo deve evitar chamadas reais; há uma exceção atual na página Contato, registrada abaixo.
-- Remediação deve aplicar DLP antes do envio do código ao LLM e reverter depois. A cobertura de DLP nos demais serviços ainda é limitada; não declarar proteção total.
-- A IA nunca faz merge automaticamente. Os módulos consultivos devem se apresentar como apoio à decisão.
-- Toda sessão de desenvolvimento atualiza `VERSION`, `CHANGELOG.md`, versão da API em `backend/main.py`, `README.md` e este arquivo. Patch para correções pontuais, minor para funcionalidade, major para quebra de compatibilidade.
-- Ao concluir uma sessão autorizada, executar testes, commit e `git push origin main` a partir da raiz; confirmar `git status` e `git log origin/main..HEAD`. Se o push falhar por rede ou autenticação, pedir ao usuário que rode `git push` no terminal com Git Credential Manager.
+## Gemini — comportamento existente v2.3.2
 
-## Variáveis e operação
+Remediação, Intenção, Risco, SLA e Radar mantêm `gemini-3.8-flash`. `GEMINI_MODEL` no Render prevalece sobre default; manter exatamente esse valor e **as duas chaves**. Cliente explícito por chave, sem `genai.configure` global; SDK fixado em 0.5.4 preservado; retry interno desligado.
 
-No Render: `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_API_KEY_2` opcional, `GEMINI_MODEL`, `GITHUB_TOKEN`, `GITHUB_REPO`, `JWT_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_EMAIL_TO`, `RESEND_FROM_ADDRESS`, `FRONTEND_URL=https://apex-security-kappa.vercel.app` e `SITE_URL=https://apex-security-site-apresentacao.vercel.app`. `render.yaml` define `PYTHON_VERSION=3.11.9`. No dashboard Vercel: Root Directory `frontend` e `VITE_API_URL=https://apex-security-xzk4.onrender.com/api`. No GitHub Actions do cliente: `APEX_API_URL` e `APEX_USER_API_KEY`. O PAT classic de `GITHUB_TOKEN` precisa dos escopos `repo` e `workflow` e renovação conforme validade definida (orientação atual: 90 dias).
+Normal: uma request. 503: retry após 0,5s no principal; segundo 503 → uma contingência `gemini-3.5-flash-lite`. 429 diário explicitamente ligado ao principal permite modelo alternativo; diário compartilhado/temporário ambíguo não troca chaves inutilmente. Falha específica de chave preserva fallback de chave. Máximo três requests no fluxo de 503; nenhum loop/retry do 3.5. RPC de 20s, orçamento de 65s, frontend de 120s; cancelamento evita novas tentativas, RPC enviada pode terminar dentro do prazo.
 
-## Problemas históricos e pendências
+Cache PostgreSQL por conta/fingerprint de entradas/modelo/prompt/revisão e lock advisory entre processos/abas. Radar por 6h com data original; Intenção/Risco/SLA por 1h; Remediação válida salva conforme fingerprint, sem expiração. Falhas não entram no cache. Cliente, prompts, wrappers e endpoints Gemini **não foram modificados nesta entrega**.
 
-Já foram corrigidos: workflow que escondia erro de envio; URL temporária de backend que expirava; token GitHub inválido que produzia 401 no Criar PR; transporte de email bloqueado na hospedagem; CORS do dashboard; URL de API fixa em localhost; Python 3.14 sem dependências compatíveis; workflow colocado apenas em `pipeline/`, onde o GitHub não o executa. O usuário informou que tokens e infraestrutura foram recriados; não pressupor que cada integração foi validada em produção.
+**Efeito aditivo a conhecer:** o wrapper existente usa todas as colunas de Alert no fingerprint. As cinco colunas opcionais novas podem invalidar uma vez caches de Remediação/Risco/SLA de alertas antigos, mesmo quando nulas. Não alteramos o wrapper protegido nem migramos hashes à força; registros salvos não são apagados. Considere esse efeito antes de solicitar nova geração com cota baixa. Radar/Intenção não recebem essas novas colunas como entrada.
 
-Validações confirmadas em 2026-10-01: 79 testes locais passaram; API em v2.2.1, pipeline com conta real (Semgrep e Trivy HTTP 201), rejeição de JSON inválido com 400 e CORS das duas origens. Pendências: envio e recebimento do formulário do site, criação de PR, webhook do Discord e funcionamento do Gemini depois de ajustar o modelo. Não há verificação de e-mail, rate limiting ou 2FA; a chave de API fica em texto no banco; scan sem chave ainda aceita dados legados. `Contact.jsx` chama a API ao enviar o formulário mesmo no Modo Demo. O DLP cobre o trecho de código do remediador, mas `intent_checker.py`, `risk_analyzer.py` e `radar.py` podem enviar campos de usuário ao Gemini sem a mesma ofuscação. Tratar isso como limitação real antes de uso comercial.
+## Idiomas, Demo e limites existentes
 
-Auditoria de 2026-10-01: `pip check` não encontrou dependências incompatíveis, mas isso não equivale a uma auditoria de segurança. `npm audit` encontrou 9 entradas vulneráveis (7 altas, 2 moderadas). OSV apontou avisos para versões fixadas de python-dotenv, pytest, python-jose e python-multipart. Atualização de dependências precisa de avaliação e testes próprios. O print do Radar confirma rejeição de `gemini-2.5-flash-lite` para a conta/projeto atual; configurar `GEMINI_MODEL` no Render para um modelo disponível. Veja [diagnóstico detalhado](docs/DIAGNOSTICO_2026-10-01.md).
+react-i18next: pt/en/es/zh/hi/fr/ja; 331 mensagens no catálogo interface, além do catálogo estrutural expandido DAST. Português anterior preservado exatamente, preferência persistente. Dados reais, código e narrativa da IA mantêm idioma original. Novos títulos/soluções DAST de Demo têm chaves próprias nos sete idiomas.
 
-## Histórico de versões
+Demo evita API nas páginas analíticas, agora inclusive DAST. Exceção existente: envio do formulário Contato é real; não foi alterado nesta sessão. PDFs zh/hi/ja rasterizam texto para preservar caracteres; demais mantêm fluxo jsPDF. Health Score existente: 100 − 25×critical − 10×high − 5×medium, piso 0, A ≥ 90 / B ≥ 70 / F < 70.
 
-- v1.x: seis módulos originais, deploy e módulos consultivos 7–11.
-- v2.0.0 (2026-07-24): recursos de produto, Modo Demo, PDF, score e sidebar.
-- v2.1.0 (2026-07-26): contato via Resend e sete idiomas.
-- v2.2.0 (2026-10-01): transição de responsável e infraestrutura, CORS do site, limpeza de referências antigas e documentação reescrita.
+Limites: sem verificação de e-mail, 2FA/rate limiting global; chave de integração em texto no banco; DLP do trecho da remediação não cobre todos os diffs/perfis; DAST sem autenticação de sessão, sem correlação com código e sem proteção contínua de egress. Risco/SLA/Radar/Intenção/Anomalias são apoio à decisão.
 
-- v2.2.1 (2026-10-01): recuperação do pool, ingestão atômica, tratamento explícito de erros e diagnóstico operacional.
-- v2.3.0 (2026-10-01): Gemini 3.8 Flash e cobertura da interface nos sete idiomas, preservando português e contratos de API.
+## Licença e verificação desta entrega
 
-A próxima sessão deve começar por este arquivo, README e CHANGELOG, confirmar o estado real do código e da produção e registrar divergências antes de novas mudanças.
+GPL-3.0-or-later, [LICENSE.md](LICENSE.md) oficial integral GNU (35.149 bytes / 674 linhas), [AUTHORS.md](AUTHORS.md), [avisos de terceiros](THIRD_PARTY_NOTICES.md). Código novo exige SPDX; JSON/binários/.env.example não recebem comentário. `scripts/check_license_headers.py` verifica fontes rastreadas pelo Git. Dependências/ferramentas externas mantêm licenças próprias.
+
+Linha de base: build passou; pytest inicialmente bloqueado na coleta pela DLL gRPC do Windows. Com transporte simulado, quatro testes legados Gemini revelaram contrato antigo incompatível com v2.3.2. Apenas testes foram atualizados para erros tipados da API, retry=None, isolamento de chave e contingência vigente. Não houve mudança de produção para fazê-los passar. TestClient precisou de execução fora da sandbox para socketpair interno do asyncio; sem servidor/rede externa.
+
+Verificação final: **181 testes offline passaram**, build e consistência dos sete idiomas passaram; navegador **112 combinações rota/idioma**, 14 PDFs, seleção/persistência, payloads/código, Demo DAST e soluções, zero requisições externas. O warning de chunk grande no build já existia. Validação real ZAP/GitHub/Render/secrets fica para o usuário. Não afirmar produção validada nesta sessão.
+
+## Operação e próximos passos
+
+Render: banco, JWT, duas chaves/modelo Gemini, PAT/repo, Resend/contato, origens CORS e novo `DAST_CALLBACK_SECRET`. Opcionais DAST: limite 5, lista de três hosts padrão, ativo habilitado, workflow `apex-dast.yml`, ref `main`, TTL de 45 minutos. GitHub: `APEX_API_URL` e `APEX_DAST_SECRET`; integração estática usa `APEX_USER_API_KEY`. Variáveis no painel, sem mudanças funcionais em render.yaml.
+
+Seguir as dez etapas manuais do [DEPLOY](DEPLOY.md). Não rodar servidor, ZAP/workflow ou serviços externos em testes. Preservar zonas protegidas. Ao concluir tarefa autorizada, atualizar versão/contexto/changelog, commit e push na main; confirmar árvore limpa e nenhum commit em `origin/main..HEAD`. Não embutir token na URL. Falha de push por rede/autenticação exige terminal do usuário, sem contornar credenciais.

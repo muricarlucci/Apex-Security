@@ -39,3 +39,21 @@ precisa apenas de um parser para este schema — o resto da plataforma não muda
 - JSON inválido → `ValueError` (a API responde 400)
 - Ferramenta desconhecida → alerta genérico `INFO` com `raw_output` preservado (não quebra)
 - Campos ausentes → defaults seguros (`None`/listas vazias), cobertos por testes
+
+## Extensão DAST (v3.0.0)
+
+O parser ZAP fica em `backend/services/dast_normalizer.py`, separado do normalizador estático preservado. Na persistência, `id` é o inteiro do banco e a data exposta é `created_at`; `id` UUID e `timestamp` da tabela acima descrevem o dicionário intermediário dos normalizadores estáticos, não o contrato inteiro da resposta HTTP.
+
+| Campo opcional em `alerts` | Tipo | Uso |
+|---|---|---|
+| `scan_type` | string ou null | SAST, SCA, IaC ou DAST; legado null tem tipo inferido apenas na UI |
+| `target_url` | string ou null | Alvo dinâmico validado |
+| `cwe_id` | string ou null | CWE do ZAP; não confundir com CVE |
+| `solution` | string ou null | Recomendação sem HTML, truncada |
+| `dast_scan_id` | inteiro ou null | Associação interna com `dast_scans` |
+
+DAST: `source_tool=zap`, pseudo-repositório `dast:<host>` ou `dast:juice-shop-lab`, URI da primeira instância em `file_path`, `line_number=null`, `cve_id=null`. Há um registro por alerta, com até 20 instâncias no `raw_output`, contagem completa e até cinco URLs na descrição. A solução/descrição têm HTML removido.
+
+Risco ZAP `3 → HIGH`, `2 → MEDIUM`, `1 → LOW`, `0 → INFO`; desconhecido → INFO. **Não há CRITICAL. `severity_adjusted == severity`: DAST nunca passa pelo priorizador IaC.** Veja [a justificativa e o fluxo de callback](dast.md).
+
+As respostas `/api/alerts` e `/api/alerts/{id}` acrescentam apenas `scan_type`, `target_url`, `cwe_id` e `solution`, todos opcionais. A listagem aceita `scan_type=DAST` e `source_tool=zap`. A ingestão estática e os dados antigos permanecem compatíveis.
