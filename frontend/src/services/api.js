@@ -89,3 +89,9 @@ export const updatePRStatus = (prId, status, approvedBy) =>
   api.patch(`/pull-request/${prId}/status`, null, { params: { status, approved_by: approvedBy } })
 
 export default api
+
+// DAST only orchestrates GitHub Actions; keep the ordinary API timeout.
+export const getDastConfig = signal => api.get('/dast/config', { signal })
+export const createDastScan = (data, signal) => api.post('/dast/scans', data, { signal })
+export const getDastScans = signal => api.get('/dast/scans', { signal })
+export const getDastScan = (id, signal) => api.get(`/dast/scans/${id}`, { signal })

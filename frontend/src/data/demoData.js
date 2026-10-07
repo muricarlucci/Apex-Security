@@ -16,7 +16,11 @@ const iso = (daysAgo, hour = 10) => {
   return d.toISOString()
 }
 
+import { demoDastAlerts } from './demoDast'
+export { demoDastScans } from './demoDast'
+
 export const demoAlerts = [
+  ...demoDastAlerts,
   {
     id: 9001, source_tool: 'semgrep', repository: 'acme-corp/checkout-api',
     severity: 'CRITICAL', severity_adjusted: 'CRITICAL',

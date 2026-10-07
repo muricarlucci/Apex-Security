@@ -42,6 +42,10 @@ class AlertResponse(BaseModel):
     file_path: Optional[str]
     line_number: Optional[int]
     created_at: datetime
+    scan_type: Optional[str] = None
+    target_url: Optional[str] = None
+    cwe_id: Optional[str] = None
+    solution: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -150,6 +154,7 @@ def list_alerts(
     severity: Optional[str] = None,
     repository: Optional[str] = None,
     source_tool: Optional[str] = None,
+    scan_type: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -160,6 +165,8 @@ def list_alerts(
         query = query.filter(Alert.repository == repository)
     if source_tool:
         query = query.filter(Alert.source_tool == source_tool)
+    if scan_type:
+        query = query.filter(Alert.scan_type == scan_type.upper())
     return query.order_by(Alert.created_at.desc()).limit(100).all()
 
 

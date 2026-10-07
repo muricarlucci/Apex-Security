@@ -40,6 +40,7 @@ export default function Repositories() {
       .then(res => {
         const grouped = {}
         for (const alert of res.data) {
+          if (alert.repository?.startsWith('dast:')) continue
           const name = alert.repository || 'desconhecido'
           if (!grouped[name]) {
             grouped[name] = { name, total: 0, severities: {} }

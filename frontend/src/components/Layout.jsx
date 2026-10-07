@@ -20,6 +20,7 @@ const navItems = [
   { path: '/pull-requests', key: 'pullRequests', icon: '⟲' },
   { path: '/real-risk', key: 'realRisk', icon: '◆' },
   { path: '/repositories', key: 'repositories', icon: '◉' },
+  { path: '/dast', key: 'dast', icon: '◎' },
   // Módulos avançados (consultivos) — separados visualmente na navegação
   { path: '/anomaly-analysis', key: 'anomalies', icon: '✦', advanced: true },
   { path: '/intent-checker', key: 'intent', icon: '⟡', advanced: true },

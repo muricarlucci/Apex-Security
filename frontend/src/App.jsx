@@ -23,6 +23,7 @@ import IntegrationKey from './pages/IntegrationKey'
 import Account from './pages/Account'
 import Contact from './pages/Contact'
 import Notifications from './pages/Notifications'
+import Dast from './pages/Dast'
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="/remediations" element={<Remediations />} />
                 <Route path="/real-risk" element={<RealRisk />} />
                 <Route path="/repositories" element={<Repositories />} />
+                <Route path="/dast" element={<Dast />} />
                 <Route path="/anomaly-analysis" element={<AnomalyAnalysis />} />
                 <Route path="/intent-checker" element={<IntentChecker />} />
                 <Route path="/radar" element={<Radar />} />

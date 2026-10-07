@@ -27,6 +27,7 @@ from routes.intent import router as intent_router
 from routes.risk import router as risk_router
 from routes.auth import router as auth_router
 from routes.contact import router as contact_router
+from routes.dast import router as dast_router
 
 Base.metadata.create_all(bind=engine)
 # create_all cria tabelas novas mas nao altera as existentes — aplica as colunas novas
@@ -54,6 +55,7 @@ app.include_router(remediate_router, prefix="/api", tags=["remediation"])
 app.include_router(pr_router, prefix="/api", tags=["pull-requests"])
 app.include_router(intent_router, prefix="/api", tags=["intent"])
 app.include_router(risk_router, prefix="/api", tags=["risk"])
+app.include_router(dast_router, prefix="/api", tags=["dast"])
 
 
 @app.on_event("startup")

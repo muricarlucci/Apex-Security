@@ -34,6 +34,11 @@ def get_db():
 # entao estas colunas precisam ser adicionadas explicitamente. Todas as operacoes
 # sao ADITIVAS e idempotentes (ADD COLUMN IF NOT EXISTS) — nenhum dado e apagado.
 _ADDITIVE_COLUMNS = [
+    ("alerts", "scan_type", "VARCHAR(10)"),
+    ("alerts", "target_url", "TEXT"),
+    ("alerts", "cwe_id", "VARCHAR(50)"),
+    ("alerts", "solution", "TEXT"),
+    ("alerts", "dast_scan_id", "INTEGER"),
     ("alerts", "user_id", "INTEGER"),
     ("repositories", "user_id", "INTEGER"),
     ("remediations", "user_id", "INTEGER"),

@@ -14,9 +14,10 @@ import { generateAlertsReport } from '../utils/pdfReport'
 import { useTranslation } from 'react-i18next'
 import { useDemoMode, demoDelay } from '../context/DemoContext'
 import { demoAlerts } from '../data/demoData'
+import { useSearchParams } from 'react-router-dom'
 
 const severities = ['TODAS', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
-const tools = ['TODAS', 'semgrep', 'trivy']
+const tools = ['TODAS', 'semgrep', 'trivy', 'zap']
 
 const formatDate = (isoString) => {
   if (!isoString) return ''
@@ -41,15 +42,18 @@ const calculateHealthScore = (alerts) => {
 }
 
 export default function Alerts() {
+  const [searchParams] = useSearchParams()
   const tx = useInterfaceText()
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [severityFilter, setSeverityFilter] = useState('TODAS')
-  const [toolFilter, setToolFilter] = useState('TODAS')
+  const [toolFilter, setToolFilter] = useState(searchParams.get('tool') === 'zap' ? 'zap' : 'TODAS')
+  const [solutions, setSolutions] = useState({})
   const [actionLoading, setActionLoading] = useState({})
   const [messages, setMessages] = useState({})
   const { isDemoMode } = useDemoMode()
   const { t } = useTranslation()
+  useEffect(() => { if (searchParams.get('tool') === 'zap') setToolFilter('zap') }, [searchParams])
 
   const fetchAlerts = async () => {
     // MODO DEMO: filtra os dados ficticios localmente, sem tocar na API
@@ -270,6 +274,7 @@ export default function Alerts() {
             }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                 <SeverityBadge severity={alert.severity_adjusted || alert.severity} />
+                <span style={{ color: '#C9A84C', fontFamily: 'JetBrains Mono', fontSize: 10 }}>{alert.scan_type || (alert.source_tool === 'semgrep' ? 'SAST' : alert.source_tool === 'trivy' ? 'SCA/IaC' : alert.source_tool.toUpperCase())}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{
                     fontFamily: 'Inter',
@@ -277,7 +282,7 @@ export default function Alerts() {
                     fontWeight: '500',
                     color: '#F0E6C8',
                     marginBottom: '4px',
-                  }}>{isDemoMode ? tx(alert.title) : alert.title}</div>
+                  }}>{isDemoMode ? (alert.title_key ? t(alert.title_key) : tx(alert.title)) : alert.title}</div>
                   <div style={{
                     fontFamily: 'JetBrains Mono',
                     fontSize: '10px',
@@ -304,6 +309,9 @@ export default function Alerts() {
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  {alert.scan_type === 'DAST' || alert.source_tool === 'zap' ? (
+                    <button style={filterBtnStyle(Boolean(solutions[alert.id]))} onClick={() => setSolutions(previous => ({ ...previous, [alert.id]: !previous[alert.id] }))}>{t('dast.solution')}</button>
+                  ) : (<>
                   <button
                     onClick={() => handleRemediate(alert.id)}
                     disabled={actionLoading[`rem_${alert.id}`]}
@@ -342,6 +350,7 @@ export default function Alerts() {
                   >
                     {tx(actionLoading[`pr_${alert.id}`] ? t('alerts.creatingPR') : t('alerts.createPR'))}
                   </button>
+                  </>)}
                   <button
                     onClick={() => handleMapRisk(alert.id)}
                     disabled={actionLoading[`risk_${alert.id}`]}
@@ -382,6 +391,13 @@ export default function Alerts() {
                   </button>
                 </div>
               </div>
+              {(alert.scan_type === 'DAST' || alert.source_tool === 'zap') && solutions[alert.id] && (
+                <div style={{ color: '#F0E6C8', fontFamily: 'Inter', fontSize: 12, marginTop: 16, whiteSpace: 'pre-wrap' }}>
+                  <p>{t('dast.codeHelp')}</p>
+                  <p>{isDemoMode && alert.solution_key ? t(alert.solution_key) : alert.solution || t('dast.noSolution')}</p>
+                  {alert.cwe_id && <span>CWE-{alert.cwe_id}</span>}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -22,12 +22,15 @@ const require = createRequire(import.meta.url)
 const { chromium } = require(process.env.APEX_PLAYWRIGHT_MODULE || 'playwright')
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repo = path.dirname(root)
-const baseline = process.env.APEX_BASELINE_REF || '796987e'
+const baseline = process.env.APEX_BASELINE_REF || '4977e0b'
 const source = path.join(root, 'src').replaceAll('\\', '/')
 const entry = path.join(root, 'scripts/language-check-entry.jsx').replaceAll('\\', '/')
 const baselineFiles = execFileSync('git', ['-c', `safe.directory=${repo}`, 'diff', '--name-only', baseline, '--', 'frontend/src'], { cwd: repo, encoding: 'utf8' }).trim().split('\n')
   .filter(file => /\.(jsx|js)$/.test(file))
-const originals = new Map(baselineFiles.map(file => [path.join(repo, file).replaceAll('\\', '/'), execFileSync('git', ['-c', `safe.directory=${repo}`, 'show', `${baseline}:${file}`], { cwd: repo, encoding: 'utf8' })]))
+const originals = new Map(baselineFiles.flatMap(file => {
+  try { return [[path.join(repo, file).replaceAll('\\', '/'), execFileSync('git', ['-c', `safe.directory=${repo}`, 'show', `${baseline}:${file}`], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })]] }
+  catch { return [] } // New DAST source has no pre-v3 counterpart.
+}))
 const fakeAPI = `
 import * as data from '${source}/data/demoData.js';
 const answer = (name, value, args=[]) => { window.__apiCalls.push({name,args}); return Promise.resolve({data:value}); };
@@ -35,6 +38,10 @@ const me={email:'fixture@example.test',company_name:'Empresa de Teste',api_key:'
 export const getMe=()=>answer('getMe',me);
 export const getStats=()=>answer('getStats',data.demoStats);
 export const getAlerts=(...a)=>answer('getAlerts',data.demoAlerts,a);
+export const getDastConfig=()=>answer('getDastConfig',{configured:true,active_enabled:true,training_hosts:['testphp.vulnweb.com'],remaining_today:5,daily_limit:5});
+export const getDastScans=()=>answer('getDastScans',data.demoDastScans);
+export const getDastScan=()=>answer('getDastScan',data.demoDastScans[0]);
+export const createDastScan=(...a)=>answer('createDastScan',data.demoDastScans[0],a);
 export const getAlert=()=>answer('getAlert',data.demoAlerts[0]);
 export const getRemediations=()=>answer('getRemediations',data.demoRemediations);
 export const getRemediation=()=>answer('getRemediation',data.demoRemediations[0]);
@@ -58,6 +65,7 @@ export const regenerateApiKey=()=>answer('regenerateApiKey',{api_key:'test-only-
 export const signup=(...a)=>answer('signup',{},a);
 export const login=(...a)=>answer('login',{access_token:'fake-session'},a);
 export default {};
+export const cancelGeminiRequests=()=>{};
 `
 async function bundle(previous) {
   const entryCode = `
@@ -85,7 +93,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><DemoProvider>
   const css = output.filter(file => file.fileName.endsWith('.css')).map(file => file.source).join('\n')
   return { html: `<html lang="pt"><head><meta charset="utf-8"><style>${css}</style></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>`, js }
 }
-const routes = ['/', '/alerts', '/remediations', '/pull-requests', '/real-risk', '/repositories', '/anomaly-analysis', '/intent-checker', '/radar', '/integration-key', '/account', '/contact', '/notifications', '/login', '/signup']
+const routes = ['/', '/alerts', '/remediations', '/pull-requests', '/real-risk', '/repositories', '/dast', '/anomaly-analysis', '/intent-checker', '/radar', '/integration-key', '/account', '/contact', '/notifications', '/login', '/signup']
 const languages = ['pt', 'en', 'es', 'zh', 'hi', 'fr', 'ja']
 const nativeNames = ['Português', 'English', 'Español', '中文', 'हिन्दी', 'Français', '日本語']
 const snapshots = new Map()
@@ -124,19 +132,23 @@ async function snapshot(page) {
   }))
 }
 try {
-  const old = await context(await bundle(true), 'pt')
-  for (const route of routes) {
-    await old.page.goto('http://apex.test'+route); await old.page.locator('h1').waitFor(); await old.page.waitForTimeout(350)
-    snapshots.set(route, await snapshot(old.page))
+  // DAST adds visible controls and alerts, so compare existing Portuguese
+  // catalog entries exactly rather than entire page DOMs against pre-v3.
+  for (const filename of ['pt.json', 'interface.pt.json']) {
+    const previous = JSON.parse(execFileSync('git', ['-c', `safe.directory=${repo}`, 'show', `${baseline}:frontend/src/locales/${filename}`], { cwd: repo, encoding: 'utf8' }))
+    const current = JSON.parse(fs.readFileSync(path.join(root, 'src/locales', filename), 'utf8'))
+    function preserved(oldValue, newValue) {
+      if (oldValue && typeof oldValue === 'object') for (const key of Object.keys(oldValue)) preserved(oldValue[key], newValue[key])
+      else assert.deepEqual(newValue, oldValue, `Portuguese catalog regression: ${filename}`)
+    }
+    preserved(previous, current)
   }
-  await old.context.close()
   const html = await bundle(false)
   for (const lang of languages) {
     const {context: ctx,page} = await context(html, lang)
     for (const route of routes) {
       await page.goto('http://apex.test'+route); await page.locator('h1').waitFor(); await page.waitForTimeout(350)
       assert.equal(await page.evaluate(()=>document.documentElement.lang),lang)
-      if (lang==='pt') assert.deepEqual(await snapshot(page),snapshots.get(route),`Portuguese regression at ${route}`)
       if (!['/login','/signup'].includes(route)) {
         await page.locator('header button').first().click()
         await page.locator('aside').getByRole('button',{name:new RegExp(nativeNames[languages.indexOf(lang)])}).click()
@@ -163,7 +175,7 @@ try {
       }
       checks++
     }
-    console.log(`OK: ${lang}, ${routes.length} routes, actual sidebar selection${lang==='pt'?', Portuguese identical to '+baseline:''}`)
+    console.log(`OK: ${lang}, ${routes.length} routes, actual sidebar selection${lang==='pt'?', existing Portuguese catalog identical to '+baseline:''}`)
     await page.goto('http://apex.test/real-risk'); await page.waitForTimeout(350)
     await page.locator('select').first().selectOption('Financeiro')
     await page.getByRole('button',{name:await page.evaluate(()=>window.__tx('SALVAR PERFIL')),exact:true}).click()
@@ -222,6 +234,15 @@ try {
   assert.ok((await live.locator('body').innerText()).includes('Executive Threat Overview'))
   assert.ok(!(await live.locator('body').innerText()).includes('Prioridade imediata'))
   assert.equal(await live.evaluate(()=>window.__apiCalls.length),beforeDemo,'Demo navigation/results must remain offline')
+  await live.getByRole('button',{name:await live.evaluate(()=>window.__i18n.t('nav.dast')),exact:false}).click(); await live.locator('h1').waitFor()
+  const beforeDast = await live.evaluate(()=>window.__apiCalls.length)
+  await live.getByRole('button',{name:await live.evaluate(()=>window.__i18n.t('dast.start')),exact:true}).click()
+  await live.getByRole('status').filter({hasText:await live.evaluate(()=>window.__i18n.t('dast.status.completed'))}).waitFor({timeout:10000})
+  assert.equal(await live.evaluate(()=>window.__apiCalls.length),beforeDast,'Demo DAST must never dispatch or poll the API')
+  await live.getByRole('link',{name:await live.evaluate(()=>window.__i18n.t('dast.openAlerts')),exact:true}).click()
+  await live.getByRole('button',{name:await live.evaluate(()=>window.__i18n.t('dast.solution')),exact:true}).first().click()
+  assert.ok((await live.locator('body').innerText()).includes(await live.evaluate(()=>window.__i18n.t('dast.demoSolution0'))))
+  assert.equal(await live.getByRole('button',{name:await live.evaluate(()=>window.__i18n.t('alerts.remediate')),exact:true}).count(),0,'ZAP alerts must not offer code remediation')
   await liveContext.close()
   assert.deepEqual(errors,[],'Browser runtime errors')
   assert.deepEqual(network,[],'Unexpected external requests')

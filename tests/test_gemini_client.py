@@ -3,85 +3,81 @@
 # Copyright (C) 2026 Apex Security contributors
 # Licensed under the GNU General Public License v3.0 or later.
 # See LICENSE.md in the repository root for the full license text.
+"""Offline tests of the existing v2.3.2 contract; no production changes."""
+from unittest.mock import MagicMock
 import pytest
-from unittest.mock import patch, MagicMock
+from google.api_core import exceptions as errors
 import services.gemini_client as gc
 
 
-def _fake_model(behaviours):
-    """
-    Fabrica um GenerativeModel falso: cada chamada consecutiva a generate_content
-    consome o proximo item de `behaviours` (Exception -> levanta; str -> devolve).
-    """
-    calls = {"n": 0}
-
-    def factory(*args, **kwargs):
+@pytest.fixture
+def transport(monkeypatch):
+    monkeypatch.setattr(gc, "_API_KEYS", ["test-key-1", "test-key-2"])
+    monkeypatch.setattr(gc, "_current_key_index", 0)
+    responses, calls, clients = [], [], []
+    def client_factory(**kwargs):
+        client = MagicMock()
+        client.key = kwargs["client_options"]["api_key"]
+        clients.append(client)
+        return client
+    def model_factory(**kwargs):
         model = MagicMock()
-
-        def generate_content(_prompt):
-            item = behaviours[calls["n"]]
-            calls["n"] += 1
-            if isinstance(item, Exception):
-                raise item
-            resp = MagicMock()
-            resp.text = item
-            return resp
-
-        model.generate_content.side_effect = generate_content
+        def generate(prompt, **options):
+            calls.append((kwargs["model_name"], model._client.key, options))
+            answer = responses.pop(0)
+            if isinstance(answer, Exception):
+                raise answer
+            return MagicMock(text=answer)
+        model.generate_content.side_effect = generate
         return model
+    monkeypatch.setattr(gc.glm, "GenerativeServiceClient", client_factory)
+    monkeypatch.setattr(gc.genai, "GenerativeModel", model_factory)
+    yield responses, calls
+    assert all(call[2]["request_options"]["retry"] is None for call in calls)
+    assert all(call[2]["request_options"]["timeout"] <= 20 for call in calls)
+    assert all(client.transport.close.call_count == 1 for client in clients)
 
-    return factory, calls
+
+def generate():
+    return gc.generate_with_fallback(gc.PRIMARY_GEMINI_MODEL, "test instruction", "test prompt")
 
 
-class TestFallbackEntreChaves:
-    """
-    O free tier do Gemini tem cota diaria por chave. Quando a chave atual estoura,
-    a proxima precisa assumir automaticamente — sem quebrar a requisicao do usuario.
-    """
+def test_normal_operation_is_one_request(transport):
+    transport[0].append("ok")
+    assert generate().text == "ok" and len(transport[1]) == 1
 
-    def test_erro_de_cota_troca_para_proxima_chave(self, monkeypatch):
-        monkeypatch.setattr(gc, "_API_KEYS", ["chave-1", "chave-2"])
-        monkeypatch.setattr(gc, "_current_key_index", 0)
-        factory, calls = _fake_model([Exception("429 Quota exceeded"), "sucesso na segunda"])
 
-        with patch.object(gc.genai, "GenerativeModel", side_effect=factory), \
-             patch.object(gc.genai, "configure"):
-            resp = gc.generate_with_fallback("modelo", "instrucao", "prompt")
+def test_key_specific_failure_preserves_second_key_and_preference(transport):
+    transport[0].extend([errors.Unauthenticated("API key invalid"), "ok"])
+    assert generate().text == "ok"
+    assert [call[1] for call in transport[1]] == ["test-key-1", "test-key-2"]
+    assert gc._current_key_index == 1
 
-        assert resp.text == "sucesso na segunda"
-        assert calls["n"] == 2  # tentou duas vezes
 
-    def test_erro_que_nao_e_de_cota_propaga_imediatamente(self, monkeypatch):
-        monkeypatch.setattr(gc, "_API_KEYS", ["chave-1", "chave-2"])
-        monkeypatch.setattr(gc, "_current_key_index", 0)
-        factory, calls = _fake_model([Exception("400 Invalid argument"), "nao deveria chegar aqui"])
+@pytest.mark.parametrize("error", [errors.InvalidArgument("bad input"),
+    errors.ResourceExhausted("temporary shared quota"), errors.ResourceExhausted("daily project quota")])
+def test_real_input_or_shared_quota_errors_do_not_rotate(transport, error):
+    transport[0].append(error)
+    with pytest.raises(RuntimeError):
+        generate()
+    assert len(transport[1]) == 1
 
-        with patch.object(gc.genai, "GenerativeModel", side_effect=factory), \
-             patch.object(gc.genai, "configure"):
-            with pytest.raises(Exception, match="Invalid argument"):
-                gc.generate_with_fallback("modelo", "instrucao", "prompt")
 
-        assert calls["n"] == 1  # nao tentou a segunda chave
+def test_second_503_uses_model_contingency_once(transport):
+    transport[0].extend([errors.ServiceUnavailable("unavailable"), errors.ServiceUnavailable("unavailable"), "ok"])
+    assert generate().text == "ok"
+    assert [call[0] for call in transport[1]] == [gc.PRIMARY_GEMINI_MODEL, gc.PRIMARY_GEMINI_MODEL, gc.FALLBACK_GEMINI_MODEL]
+    assert all(call[1] == "test-key-1" for call in transport[1])
 
-    def test_todas_as_chaves_esgotadas_levanta_runtime_error(self, monkeypatch):
-        monkeypatch.setattr(gc, "_API_KEYS", ["chave-1", "chave-2"])
-        monkeypatch.setattr(gc, "_current_key_index", 0)
-        factory, calls = _fake_model([Exception("429 quota"), Exception("429 quota")])
 
-        with patch.object(gc.genai, "GenerativeModel", side_effect=factory), \
-             patch.object(gc.genai, "configure"):
-            with pytest.raises(RuntimeError, match="atingiram o limite"):
-                gc.generate_with_fallback("modelo", "instrucao", "prompt")
+def test_model_daily_quota_uses_other_model_without_key_rotation(transport):
+    transport[0].extend([errors.ResourceExhausted(f"requests per day model {gc.PRIMARY_GEMINI_MODEL}"), "ok"])
+    assert generate().text == "ok"
+    assert [call[0] for call in transport[1]] == [gc.PRIMARY_GEMINI_MODEL, gc.FALLBACK_GEMINI_MODEL]
 
-        assert calls["n"] == 2
 
-    def test_chave_que_funcionou_vira_a_preferida(self, monkeypatch):
-        monkeypatch.setattr(gc, "_API_KEYS", ["chave-1", "chave-2"])
-        monkeypatch.setattr(gc, "_current_key_index", 0)
-        factory, _ = _fake_model([Exception("429 quota"), "ok"])
-
-        with patch.object(gc.genai, "GenerativeModel", side_effect=factory), \
-             patch.object(gc.genai, "configure"):
-            gc.generate_with_fallback("modelo", "instrucao", "prompt")
-
-        assert gc._current_key_index == 1  # passou a preferir a chave que funcionou
+def test_contingency_failure_does_not_loop(transport):
+    transport[0].extend([errors.ServiceUnavailable("unavailable")] * 3)
+    with pytest.raises(RuntimeError):
+        generate()
+    assert len(transport[1]) == 3

@@ -23,6 +23,11 @@ const base = flatten(read('pt.json'))
 for (let i = 0; i < languages.length; i++) {
   assert.deepEqual(Object.keys(catalogs[i]).sort(), keys, `${languages[i]}: missing interface keys`)
   assert.deepEqual(Object.keys(flatten(read(`${languages[i]}.json`))).sort(), Object.keys(base).sort())
+  const locale = flatten(read(`${languages[i]}.json`))
+  for (const key of Object.keys(base)) {
+    assert.ok(typeof locale[key] === 'string' && locale[key].trim(), `${languages[i]}: empty ${key}`)
+    assert.deepEqual(variables(locale[key]), variables(base[key]), `${languages[i]}: interpolation ${key}`)
+  }
   for (const key of keys) {
     assert.equal(typeof catalogs[i][key], 'string')
     assert.ok(catalogs[i][key].trim(), `${languages[i]}: empty ${key}`)

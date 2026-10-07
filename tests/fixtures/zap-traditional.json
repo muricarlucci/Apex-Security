@@ -1,0 +1,17 @@
+{
+  "@version": "2.16.1",
+  "site": [{
+    "@name": "http://localhost:3000", "@host": "localhost", "@port": "3000", "@ssl": "false",
+    "alerts": [{
+      "pluginid": "40012", "alertRef": "40012-1", "alert": "Cross Site Scripting (Reflected)",
+      "name": "Cross Site Scripting (Reflected)", "riskcode": "3", "confidence": "2", "riskdesc": "High (Medium)",
+      "desc": "<p>Reflected <b>cross-site scripting</b> &amp; unsafe output.</p>",
+      "instances": [
+        {"uri": "http://localhost:3000/test?q=1", "method": "GET", "param": "q", "attack": "test-input", "evidence": "test-evidence"},
+        {"uri": "http://localhost:3000/test?q=2", "method": "GET", "param": "q", "attack": "test-input", "evidence": "test-evidence"}
+      ],
+      "count": "2", "solution": "<p>Encode <b>output</b> for its context.</p>",
+      "reference": "https://owasp.org/www-community/attacks/xss/", "cweid": "79", "wascid": "8", "sourceid": "1"
+    }]
+  }]
+}

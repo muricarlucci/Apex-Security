@@ -60,7 +60,35 @@ class Alert(Base):
     cve_id = Column(String(50))
     iac_internet_exposed = Column(Boolean, default=None)
     raw_output = Column(Text)
+    scan_type = Column(String(10), nullable=True)
+    target_url = Column(Text, nullable=True)
+    cwe_id = Column(String(50), nullable=True)
+    solution = Column(Text, nullable=True)
+    dast_scan_id = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class DastScan(Base):
+    __tablename__ = "dast_scans"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    target_kind = Column(String(10), nullable=False)
+    target_url = Column(Text, nullable=False)
+    target_label = Column(Text, nullable=False)
+    mode = Column(String(10), nullable=False)
+    status = Column(String(20), nullable=False, index=True)
+    nonce = Column(String(64), nullable=False)
+    callback_expires_at = Column(DateTime(timezone=True), nullable=False)
+    authorization_ack = Column(Boolean, default=False, nullable=False)
+    authorization_ack_at = Column(DateTime(timezone=True))
+    requested_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    started_at = Column(DateTime(timezone=True))
+    finished_at = Column(DateTime(timezone=True))
+    alerts_count = Column(Integer, default=0)
+    zap_version = Column(String(50))
+    error = Column(String(500))
+    counts_json = Column(Text, default="{}")
 
 
 class Repository(Base):

@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Apex Security - Application Security Posture Management platform
+# Copyright (C) 2026 Apex Security contributors
+# Licensed under the GNU General Public License v3.0 or later.
+# See LICENSE.md in the repository root for the full license text.
+name: Apex DAST Scan
+on:
+  workflow_dispatch:
+    inputs:
+      scan_id:
+        description: ID da analise DAST na Apex
+        required: true
+        type: string
+      nonce:
+        description: Nonce publico da analise
+        required: true
+        type: string
+      target_kind:
+        description: lab ou custom
+        required: true
+        type: choice
+        options: [lab, custom]
+      target_url:
+        description: URL autorizada (somente custom)
+        required: false
+        type: string
+      mode:
+        description: baseline ou full
+        required: true
+        type: choice
+        options: [baseline, full]
+      training_hosts:
+        description: Hosts de treinamento autorizados pela configuracao Apex
+        required: false
+        default: testphp.vulnweb.com,demo.testfire.net,public-firing-range.appspot.com
+        type: string
+concurrency:
+  group: apex-dast
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SCAN_ID: ${{ inputs.scan_id }}
+      NONCE: ${{ inputs.nonce }}
+      TARGET_KIND: ${{ inputs.target_kind }}
+      TARGET_URL_INPUT: ${{ inputs.target_url }}
+      SCAN_MODE: ${{ inputs.mode }}
+      DAST_TRAINING_HOSTS: ${{ inputs.training_hosts }}
+      APEX_API_URL: ${{ secrets.APEX_API_URL }}
+      APEX_DAST_SECRET: ${{ secrets.APEX_DAST_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar entradas e configuracao
+        run: python3 pipeline/dast_job.py validate
+      - name: Avisar a Apex que comecou
+        continue-on-error: true
+        run: python3 pipeline/dast_job.py running
+      - name: Subir OWASP Juice Shop (somente laboratorio)
+        if: env.TARGET_KIND == 'lab'
+        run: python3 pipeline/dast_job.py lab
+      - name: Executar OWASP ZAP
+        run: python3 pipeline/dast_job.py scan
+      - name: Enviar resultado assinado
+        run: python3 pipeline/dast_job.py completed
+      - name: Informar falha
+        if: failure()
+        continue-on-error: true
+        run: python3 pipeline/dast_job.py failed
+      - name: Remover containers do laboratorio e scanner
+        if: always()
+        run: docker rm -f apex-zap juice-shop >/dev/null 2>&1 || true
